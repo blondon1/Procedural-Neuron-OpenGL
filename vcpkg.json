@@ -1,0 +1,9 @@
+{
+    "name": "neuron-sim",
+    "version": "0.1.0",
+    "dependencies": [
+        "glfw3",
+        "glm",
+        "glad"
+    ]
+}

@@ -1,0 +1,28 @@
+#Build Directory 
+build/
+out/
+cmake-build-*/
+
+#Package Manager Artifacts
+vcpkg_installed/
+_deps/
+
+#Compiled Binaries and Objects
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk
+
+#CMake Cache and Logs
+CMakeCache.txt
+CMakeFiles/
+Makefile
+compile_commands.json
+
+#Visual Studio Code Settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
