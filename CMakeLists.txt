@@ -14,7 +14,7 @@ find_package(OpenGL REQUIRED)
 set(DEPS glfw glad::glad glm::glm OpenGL::GL)
 
 # 2D Topology executable
-add_executable(Neurons2D 2D_topology.cpp)
+add_executable(Neurons2D src/2D_topology.cpp)
 target_link_libraries(Neurons2D PRIVATE ${DEPS})
 target_include_directories(Neurons2D PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
