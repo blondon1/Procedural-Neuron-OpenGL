@@ -6,13 +6,17 @@
 #include <cmath>
 #include <numbers>
 #define _USE_MATH_DEFINES
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Define Shader Source Code (GLSL - C like)
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
+    "uniform mat4 projection;\n" // The Matrix Receptor
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   // Matrix multiplication applies the aspect ratio correction\n"
+    "   gl_Position = projection * vec4(aPos, 1.0);\n" 
     "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
@@ -174,6 +178,13 @@ int main() {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+
+    // Define the Orthographic Projection Matrix to replace the distortion of the normalized device coordinates (NDC)
+    glUseProgram(shaderProgram);
+    float aspectRatio = 800.0f / 600.0f;
+    glm::mat4 projection = glm::ortho(-aspectRatio, aspectRatio, -1.0f, 1.0f, -1.0f, 1.0f);
+    int projLoc = glGetUniformLocation(shaderProgram, "projection");
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
     //Scope for objects
     {
