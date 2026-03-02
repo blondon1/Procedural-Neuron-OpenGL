@@ -5,6 +5,9 @@
 #include <vector>
 #include <cmath>
 #include <numbers>
+#include <string>
+#include <stack>
+#include <random>
 #define _USE_MATH_DEFINES
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -27,6 +30,12 @@ const char *fragmentShaderSource = "#version 330 core\n"
     "   FragColor = objectColor;\n" 
     "}\n";
 
+
+struct TurtleState {
+    glm::vec2 position;
+    float angle; // in radians
+    float thickness;
+};
 
 // Owns the GPU memory and the geometric payload
 struct RenderableShape {
@@ -106,8 +115,114 @@ struct Soma : public RenderableShape {
     }
 };
 
+struct Dendrite : public RenderableShape {
+    // Added numPrimaryDendrites and somaRadius to the parameters
+    void generateFractalTopology(int iterations, float somaRadius, int numPrimaryDendrites, float branchLength, float branchAngle, float baseThickness) {
+
+        // PHASE 1: DNA STRING GENERATION
+        std::string currentString = "F"; 
+        std::string productionRule = "F[-F][+F]"; 
+
+        for (int i = 0; i < iterations; i++) {
+            std::string nextString = "";
+            for (char c : currentString) {
+                if (c == 'F') nextString += productionRule;
+                else nextString += c;
+            }
+            currentString = nextString; 
+        }
+
+        std::cout << "Dendrite DNA (Iterations: " << iterations << "): " << currentString << std::endl;
+
+        // PHASE 2: GEOMETRIC EXECUTION 
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        
+        // Macroscopic branching (L-System nodes)
+        std::uniform_real_distribution<float> macroAngleNoise(-8.0f, 8.0f);
+        
+        // Microscopic curvature (Segment drift)
+        std::uniform_real_distribution<float> microDriftNoise(-3.0f, 3.0f);
+
+        vertices.clear();
+        float angleRad = branchAngle * (float)std::numbers::pi / 180.0f;
+
+        // Loop to generate multipolar primary dendrites around the soma
+        for (int t = 0; t < numPrimaryDendrites; t++) {
+            
+            // Calculate starting position on the soma's perimeter
+            float theta = (2.0f * (float)std::numbers::pi * t) / numPrimaryDendrites;
+            
+            // Add a slight randomized offset so primary dendrites aren't perfectly symmetrical
+            std::uniform_real_distribution<float> trunkOffset(-0.2f, 0.2f);
+            theta += trunkOffset(gen);
+
+            glm::vec2 startPos;
+            startPos.x = somaRadius * cos(theta);
+            startPos.y = somaRadius * sin(theta);
+
+            // The heading angle must be orthogonal to the circle at the starting coordinate
+            TurtleState currentState = { startPos, theta, baseThickness }; 
+            std::stack<TurtleState> memoryStack;
+
+            // Execute the DNA sequence for this specific primary dendrite
+            for (char c : currentString) {
+                if (c == 'F') {
+                    
+                    int subSegments = 4; // Subdivide the line into 4 micro-segments
+                    float l = branchLength / subSegments;
+
+                    for (int j = 0; j < subSegments; j++) {
+                        // Calculate the end position of this micro-segment
+                        glm::vec2 endPos;
+                        endPos.x = currentState.position.x + cos(currentState.angle) * l;
+                        endPos.y = currentState.position.y + sin(currentState.angle) * l;
+
+                        // Calculate the perpendicular vector for thickness
+                        glm::vec2 perp(-sin(currentState.angle), cos(currentState.angle));
+                        
+                        // Calculate the 4 corners of the quad
+                        float halfThick = currentState.thickness / 2.0f;
+                        glm::vec3 bottomLeft(currentState.position.x - perp.x * halfThick, currentState.position.y - perp.y * halfThick, 0.0f);
+                        glm::vec3 bottomRight(currentState.position.x + perp.x * halfThick, currentState.position.y + perp.y * halfThick, 0.0f);
+                        glm::vec3 topLeft(endPos.x - perp.x * halfThick, endPos.y - perp.y * halfThick, 0.0f);
+                        glm::vec3 topRight(endPos.x + perp.x * halfThick, endPos.y + perp.y * halfThick, 0.0f);
+
+                        // Push the two triangles (6 vertices)
+                        vertices.push_back(bottomLeft);
+                        vertices.push_back(bottomRight);
+                        vertices.push_back(topLeft);
+                        
+                        vertices.push_back(bottomRight);
+                        vertices.push_back(topRight);
+                        vertices.push_back(topLeft);
+
+                        // Update position and inject stochastic curvature drift
+                        currentState.position = endPos;
+                        
+                        float microDrift = microDriftNoise(gen) * (float)std::numbers::pi / 180.0f;
+                        currentState.angle += microDrift; 
+                    }
+                    
+                } else if (c == '+') {
+                    float randomOffset = macroAngleNoise(gen) * (float)std::numbers::pi / 180.0f;
+                    currentState.angle -= (angleRad + randomOffset); 
+                } else if (c == '-') {
+                    float randomOffset = macroAngleNoise(gen) * (float)std::numbers::pi / 180.0f;
+                    currentState.angle += (angleRad + randomOffset); 
+                } else if (c == '[') {
+                    memoryStack.push(currentState);
+                    currentState.thickness *= 0.65f; // Adjusted taper to survive longer branches
+                } else if (c == ']') {
+                    currentState = memoryStack.top();
+                    memoryStack.pop();
+                }
+            }
+        }
+    }
+};
+
 // TODO
-struct Dendrite : public RenderableShape {};
 struct Axon : public RenderableShape {};
 
 // The Manager Class which owns the biology and the state
@@ -129,17 +244,19 @@ struct Neuron {
     void initializeHardware() {
         soma.allocateVram();
         nucleus.allocateVram();
+        dendrite.generateFractalTopology(4, 0.3f, 7, 0.08f, 22.0f, 0.04f);
+        dendrite.allocateVram();
         // axon.allocateVram(); 
-        // dendrite.allocateVram();
+        
     }
 
     // Called every frame inside the render loop
     void Draw(unsigned int shaderProgram) {
-        // Draw Soma: Dark Blue (R: 0.1, G: 0.2, B: 0.5, A: 1.0)
         soma.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
         
-        // Draw Nucleus: Light Grey/Yellow (R: 0.8, G: 0.8, B: 0.7, A: 1.0)
         nucleus.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.0f, 0.38f, 1.0f);
+
+        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
     }
 };
 

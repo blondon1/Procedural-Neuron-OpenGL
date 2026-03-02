@@ -63,3 +63,35 @@ Key concepts of the LIF model: the neurons sums up electrical signals from other
 
 OOD(Object Oriented Design)
 So I have the following components that I have to implement in code, the nucleus as the DNA holder of the cell, the soma, the dendrites and the axon, firstly I want to focus on the nucleus and the soma to have a visual representation with a dark blue for the nucleus and a light blue for the soma, I will have a struct for all of them and a Neuron class to own the building parts of the cell, because there is a difference between has-a and is-a in OOD and a neuron owns its parts, but its parts do not inherit from them. Need a base class for the architecture to contain the VBO and VAO context to not have to repeat myself in the main function. The struct building components of the cell will inherit from the base class renderShape(not the Neuron class). The base class will 1- declare the VBO and VAO variables 2- generate the math on the cpu side for the shapes 3- generate the VBO object and VAO state manager on the GPU 4- draw the elements.
+
+
+# 3/2/2026
+Quote from The Algorithmic beauty of plants
+**"Self-similarity relates plant structures to the geometry of fractals. Computer-aided** **visualization of these structures, and the processes that create them, joins**
+**science with art."** This is an amazing book that explains the application of computer graphics to biological structures, and it is a beautiful intersection of biology and computer science/mathematics.
+
+Link: https://algorithmicbotany.org/papers/abop/abop.pdf
+
+**Debugging dendrites:**
+A simnple L-system is too deterministic, and the dendrite branches need to originate from the cell body(soma)'s perimeter, rather than cartesian coordinates.
+I need to anchor the geometry to have a natural cone like structure at the base because dendrites need to look like extentions of the cell body and the branching process needs more noise and randomness to look truly organic and natural. 
+
+I need to calculate starting coordinates for **each primary dendrite branch**, to be able to simulate a multipolar neuron, and make sure each new branch grothws outward in coorelation to the neuron's center. 
+
+**The parametric equation of a circle** which simplifies complex coordinate geometry to plot points along a circle's perimeter should help me place the locations.
+
+Assuming the soma's center and its radius, any unknown point in its perimeter can be define by the angle θ, then divide the 360 circle(2pi radians) into equal slices, the baaseline angle θ for each i numPrimaryDendrite is calculated using θ_i ​= 2π ⋅ i/N​ 
+
+I need randomization of the placement of the primaries dendrites and randomization of the dendrites to curve dynamically:
+
+To remove straight-line branches, the current L-system forward command (F) of length L is fractured into sub-segments (k)
+subSegments using linear subdivision: l = L/K
+
+vector projecttion knowing the Turtle's heading, to calculate its next position:
+iterate j from 1 to k and at each step, there's a generated angular drift(Delta ⋅ Alpha) 
+x_j ​= x_j − 1 ​+ lcos(α_j−1​)
+y_j ​= y_j − 1 ​+ lsin(α_j−1​)
+
+Note: the perpendicular vector must be recalculated at every micro-step j
+
+α_j ​= α_j − 1 ​+ Delta ⋅ Alpha
