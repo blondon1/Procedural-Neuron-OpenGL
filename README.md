@@ -90,3 +90,6 @@ The project is an active **Work In Progress (WIP)** with the following developme
    Execute the compiled binary from the build directory.
    ```bash
     .\build\Debug\Neurons2D.exe
+
+## License
+This project is licensed under the **MIT License** - see the [LICENSE](https://opensource.org/license/MIT) file for details.
