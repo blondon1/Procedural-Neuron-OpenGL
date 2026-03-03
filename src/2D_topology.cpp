@@ -128,8 +128,8 @@ struct RenderableShape {
 // The Derived Classes: They inherit VAO, VBO, and vertices 
 struct Nucleus : public RenderableShape {
     Nucleus() {
-        float radiusX = 0.1f; // narrower width
-        float radiusY = 0.15f; // taller height for an oval shape
+        float radiusX = 0.07f; // narrower width
+        float radiusY = 0.10f; // taller height for an oval shape
         int visualFidelity = 36;
         generateCurvilinearShape(radiusX, radiusY, visualFidelity);
     }
@@ -141,6 +141,16 @@ struct Soma : public RenderableShape {
         float radius = 0.3f; // equal radius for a circle
         int visualFidelity = 36; // 36 segments for a smooth circle
         generateCurvilinearShape(radius, radius, visualFidelity);
+    }
+};
+
+struct Cytoplasm : public RenderableShape {
+    // Constructor to define the inner, denser shape
+    Cytoplasm() {
+        float radiusX = 0.25f; // narrower width
+        float radiusY = 0.2f; // taller height for an oval shape
+        int visualFidelity = 36; 
+        generateCurvilinearShape(radiusX, radiusY, visualFidelity);
     }
 };
 
@@ -238,7 +248,7 @@ struct Dendrite : public RenderableShape {
                         
                         // Apply 15% decay per micro-step, clamped to a strict biological minimum (0.003f)
                         float nextThickness = currentState.thickness * 0.65f; 
-                        if (nextThickness < 0.003f) nextThickness = 0.003f;
+                        if (nextThickness < 0.0040f) nextThickness = 0.0040f;
                         
                         float endHalfThick = nextThickness / 2.0f;
 
@@ -273,7 +283,7 @@ struct Dendrite : public RenderableShape {
                     currentState.angle += (angleRad + randomOffset); 
                 } else if (c == '[') {
                     memoryStack.push(currentState);
-                    currentState.thickness *= 0.65f; // Adjusted taper to survive longer branches
+                    currentState.thickness *= 0.85f; // Adjusted taper to survive longer branches
                 } else if (c == ']') {
                     currentState = memoryStack.top();
                     memoryStack.pop();
@@ -297,6 +307,7 @@ struct Neuron {
 
     // Composition: The Neuron HAS these structural parts
     Soma soma;
+    Cytoplasm cytoplasm;
     Nucleus nucleus;
     Dendrite dendrite;
     Axon axon;
@@ -304,6 +315,7 @@ struct Neuron {
     // Called once from main() after window creation
     void initializeHardware() {
         soma.allocateVram();
+        cytoplasm.allocateVram();
         nucleus.allocateVram();
         dendrite.generateFractalTopology(4, 0.3f, 7, 0.08f, 22.0f, 0.35f);
         dendrite.allocateVram();
@@ -313,9 +325,11 @@ struct Neuron {
 
     // Called every frame inside the render loop
     void Draw(unsigned int shaderProgram) {
+        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f, glm::vec2(0.0f, 0.0f), 0.0f);
         soma.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
+        cytoplasm.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.15f, 0.75f, 1.0f, 1.0f);
         nucleus.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.0f, 0.38f, 1.0f);
-        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f, glm::vec2(0.0f, 0.0f), 0.3f);
+        
     }
 };
 
