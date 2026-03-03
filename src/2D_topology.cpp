@@ -15,19 +15,38 @@
 // Define Shader Source Code (GLSL - C like)
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
-    "uniform mat4 projection;\n" // The Matrix Receptor
+    "uniform mat4 projection;\n"
+    "out vec2 FragPos;\n" // payload for the Fragment Shader
     "void main()\n"
     "{\n"
-    "   // Matrix multiplication applies the aspect ratio correction\n"
     "   gl_Position = projection * vec4(aPos, 1.0);\n" 
+    "   FragPos = vec2(aPos.x, aPos.y);\n" // Extract spatial coordinates
     "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
+    "in vec2 FragPos;\n"
     "out vec4 FragColor;\n"
     "uniform vec4 objectColor;\n" 
+    "uniform vec2 somaCenter;\n" 
+    "uniform float somaRadius;\n" 
     "void main()\n"
     "{\n"
-    "   FragColor = objectColor;\n" 
+    "   // Bypass SDF blending for core structures (Soma, Nucleus)\n"
+    "   if (somaRadius <= 0.01) {\n"
+    "       FragColor = objectColor;\n"
+    "   } else {\n"
+    "       // Execute SDF blending for Dendrites\n"
+    "       float dist = length(FragPos - somaCenter);\n"
+    "       \n"
+    "       // Fade out the sharp corners inside the soma, keep branches solid outside\n"
+    "       float innerEdge = somaRadius - 0.02;\n"
+    "       float outerEdge = somaRadius + 0.01;\n"
+    "       \n"
+    "       // Interpolates from 0.0 (hidden base) to 1.0 (solid branch)\n"
+    "       float alphaBlend = smoothstep(innerEdge, outerEdge, dist);\n"
+    "       \n"
+    "       FragColor = vec4(objectColor.rgb, objectColor.a * alphaBlend);\n"
+    "   }\n"
     "}\n";
 
 
@@ -80,9 +99,19 @@ struct RenderableShape {
     }
 
     // Execution
-    void Draw(GLenum drawingMode, unsigned int shaderProgram, float r, float g, float b, float a) {
-        int location = glGetUniformLocation(shaderProgram, "objectColor");
-        glUniform4f(location, r, g, b, a);
+    void Draw(GLenum drawingMode, unsigned int shaderProgram, float r, float g, float b, float a, glm::vec2 sCenter = glm::vec2(0.0f, 0.0f), float sRadius = 0.0f) {
+        // Standard color payload
+        int colorLoc = glGetUniformLocation(shaderProgram, "objectColor");
+        glUniform4f(colorLoc, r, g, b, a);
+
+        // Spatial data payload (For SDF Blending in Fragment Shader)
+        int centerLoc = glGetUniformLocation(shaderProgram, "somaCenter");
+        glUniform2f(centerLoc, sCenter.x, sCenter.y);
+
+        int radiusLoc = glGetUniformLocation(shaderProgram, "somaRadius");
+        glUniform1f(radiusLoc, sRadius);
+
+        // Hardware draw call
         glBindVertexArray(VAO);
         glDrawArrays(drawingMode, 0, vertices.size());
         glBindVertexArray(0); // Unbind to protect state
@@ -121,18 +150,38 @@ struct Dendrite : public RenderableShape {
 
         // PHASE 1: DNA STRING GENERATION
         std::string currentString = "F"; 
-        std::string productionRule = "F[-F][+F]"; 
+
+        // Initialize a dedicated random engine for the grammar phase
+        std::random_device rdGrammar;
+        std::mt19937 genGrammar(rdGrammar());
+        std::uniform_real_distribution<float> probabilityMatrix(0.0f, 1.0f);
 
         for (int i = 0; i < iterations; i++) {
             std::string nextString = "";
             for (char c : currentString) {
-                if (c == 'F') nextString += productionRule;
-                else nextString += c;
+                if (c == 'F') {
+                    // Roll the probability dice for this specific node
+                    float p = probabilityMatrix(genGrammar);
+                    
+                    if (p < 0.35f) {
+                        // 35% chance: Asymmetrical Left Split
+                        nextString += "F[-F]"; 
+                    } else if (p < 0.70f) {
+                        // 35% chance: Asymmetrical Right Split
+                        nextString += "F[+F]"; 
+                    } else {
+                        // 30% chance: Symmetrical Bilateral Split
+                        nextString += "F[-F][+F]"; 
+                    }
+                } else {
+                    // Retain memory characters (+, -, [, ]) without mutation
+                    nextString += c;
+                }
             }
             currentString = nextString; 
         }
 
-        std::cout << "Dendrite DNA (Iterations: " << iterations << "): " << currentString << std::endl;
+        std::cout << "Stochastic Dendrite DNA (Iterations: " << iterations << "): " << currentString << std::endl;
 
         // PHASE 2: GEOMETRIC EXECUTION 
         std::random_device rd;
@@ -157,9 +206,13 @@ struct Dendrite : public RenderableShape {
             std::uniform_real_distribution<float> trunkOffset(-0.2f, 0.2f);
             theta += trunkOffset(gen);
 
+            // GEOMETRIC FIX: Submerge the wide base inside the soma to close the tangent gap
+            float anchorDepth = 0.045f; // How deep to bury the trapezoid base
+            float submergedRadius = somaRadius - anchorDepth;
+
             glm::vec2 startPos;
-            startPos.x = somaRadius * cos(theta);
-            startPos.y = somaRadius * sin(theta);
+            startPos.x = submergedRadius * cos(theta);
+            startPos.y = submergedRadius * sin(theta);
 
             // The heading angle must be orthogonal to the circle at the starting coordinate
             TurtleState currentState = { startPos, theta, baseThickness }; 
@@ -167,8 +220,7 @@ struct Dendrite : public RenderableShape {
 
             // Execute the DNA sequence for this specific primary dendrite
             for (char c : currentString) {
-                if (c == 'F') {
-                    
+                if (c == 'F') {    
                     int subSegments = 4; // Subdivide the line into 4 micro-segments
                     float l = branchLength / subSegments;
 
@@ -181,12 +233,20 @@ struct Dendrite : public RenderableShape {
                         // Calculate the perpendicular vector for thickness
                         glm::vec2 perp(-sin(currentState.angle), cos(currentState.angle));
                         
-                        // Calculate the 4 corners of the quad
-                        float halfThick = currentState.thickness / 2.0f;
-                        glm::vec3 bottomLeft(currentState.position.x - perp.x * halfThick, currentState.position.y - perp.y * halfThick, 0.0f);
-                        glm::vec3 bottomRight(currentState.position.x + perp.x * halfThick, currentState.position.y + perp.y * halfThick, 0.0f);
-                        glm::vec3 topLeft(endPos.x - perp.x * halfThick, endPos.y - perp.y * halfThick, 0.0f);
-                        glm::vec3 topRight(endPos.x + perp.x * halfThick, endPos.y + perp.y * halfThick, 0.0f);
+                        // Calculate Exponential Decay for this specific micro-segment
+                        float startHalfThick = currentState.thickness / 2.0f;
+                        
+                        // Apply 15% decay per micro-step, clamped to a strict biological minimum (0.003f)
+                        float nextThickness = currentState.thickness * 0.65f; 
+                        if (nextThickness < 0.003f) nextThickness = 0.003f;
+                        
+                        float endHalfThick = nextThickness / 2.0f;
+
+                        // Calculate the 4 corners of the trapezoidal quad
+                        glm::vec3 bottomLeft(currentState.position.x - perp.x * startHalfThick, currentState.position.y - perp.y * startHalfThick, 0.0f);
+                        glm::vec3 bottomRight(currentState.position.x + perp.x * startHalfThick, currentState.position.y + perp.y * startHalfThick, 0.0f);
+                        glm::vec3 topLeft(endPos.x - perp.x * endHalfThick, endPos.y - perp.y * endHalfThick, 0.0f);
+                        glm::vec3 topRight(endPos.x + perp.x * endHalfThick, endPos.y + perp.y * endHalfThick, 0.0f);
 
                         // Push the two triangles (6 vertices)
                         vertices.push_back(bottomLeft);
@@ -197,11 +257,12 @@ struct Dendrite : public RenderableShape {
                         vertices.push_back(topRight);
                         vertices.push_back(topLeft);
 
-                        // Update position and inject stochastic curvature drift
+                        // Update position, save the tapered thickness, and inject stochastic curvature drift
                         currentState.position = endPos;
+                        currentState.thickness = nextThickness; 
                         
                         float microDrift = microDriftNoise(gen) * (float)std::numbers::pi / 180.0f;
-                        currentState.angle += microDrift; 
+                        currentState.angle += microDrift;
                     }
                     
                 } else if (c == '+') {
@@ -244,7 +305,7 @@ struct Neuron {
     void initializeHardware() {
         soma.allocateVram();
         nucleus.allocateVram();
-        dendrite.generateFractalTopology(4, 0.3f, 7, 0.08f, 22.0f, 0.04f);
+        dendrite.generateFractalTopology(4, 0.3f, 7, 0.08f, 22.0f, 0.35f);
         dendrite.allocateVram();
         // axon.allocateVram(); 
         
@@ -253,10 +314,8 @@ struct Neuron {
     // Called every frame inside the render loop
     void Draw(unsigned int shaderProgram) {
         soma.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
-        
         nucleus.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.0f, 0.38f, 1.0f);
-
-        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
+        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f, glm::vec2(0.0f, 0.0f), 0.3f);
     }
 };
 
@@ -278,6 +337,9 @@ int main() {
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
 
+    // Add transparency processing to the OpenGl state machine
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Build the Pipeline (Compile & Link Shaders)
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);

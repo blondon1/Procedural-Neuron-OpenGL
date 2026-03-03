@@ -95,3 +95,18 @@ y_j ​= y_j − 1 ​+ lsin(α_j−1​)
 Note: the perpendicular vector must be recalculated at every micro-step j
 
 α_j ​= α_j − 1 ​+ Delta ⋅ Alpha
+
+**Dendrites organic shapes**
+Need to solve the geometric friction on the CPU by mutating the underlying data structure, or on the GPU by manipulating the visual output of curve the base vertices of the primary dendrites.
+
+**Challenges:**
+1. the C++ geometry is produceding harsh corners where the dendrites met the soma.
+2. the L-system is producing identical "snowflake" branches across every primary dendrite.
+3. primary dendrites rendered as rectangular tubes, they should look like a natural extension of the cell body.
+4. the flat base of the initial trapezoids were creating empty triangular gaps in the visual image.
+
+**Solutions:**
+1. intercep the FragPos from the vertex shader and injected a signed distance Field (SDF) into the fragment shader.
+2. replace the rigid F[- F][+ F] mutation loop.
+3. replaced the static rectangular shapes in the linear subdivision loop with decaying trapezoids to make the primary dendrites look like extentions of the soma
+4. submerged the origin coordinate of the L-system into the core of the cell by testing it manually until it looked natural
