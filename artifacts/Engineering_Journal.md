@@ -110,3 +110,6 @@ Need to solve the geometric friction on the CPU by mutating the underlying data 
 2. replace the rigid F[- F][+ F] mutation loop.
 3. replaced the static rectangular shapes in the linear subdivision loop with decaying trapezoids to make the primary dendrites look like extentions of the soma
 4. submerged the origin coordinate of the L-system into the core of the cell by testing it manually until it looked natural
+
+3/4/2026
+Now that I have a working demo of the neuron morphology, I will encapsulate my classes using Object-Oriented Design (OOD) principles. I am organizing my sections of logic into different files to ensure faster compile times as the project scales and to enforce strict structural organization overall. Blueprint declarations will be isolated into .h header files, while massive geometric functions will be extracted into .cpp implementation files accordingly.

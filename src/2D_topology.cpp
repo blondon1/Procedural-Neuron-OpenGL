@@ -57,11 +57,13 @@ struct TurtleState {
 };
 
 // Owns the GPU memory and the geometric payload
-struct RenderableShape {
+class RenderableShape {
+private:
     // Allocate Memory (Define Vertices) & Record the State
     unsigned int VAO = 0, VBO = 0;
-    std::vector<glm::vec3> vertices;
     float M_PI = std::numbers::pi_v<float>;
+protected:
+    std::vector<glm::vec3> vertices;
     // Mathematical generator on the CPU side
     // Generates a perfect circle if radiusX == radiusY, or an oval if they differ.
     void generateCurvilinearShape(float radiusX, float radiusY, int segments) {
@@ -79,6 +81,7 @@ struct RenderableShape {
             vertices.push_back(glm::vec3(x, y, 0.0f));
         }
     }
+public:
     /* memory allocator on the GPU Side which needs the OpenGL context (GLFW window)
     to avoid a fatal crash */
     void allocateVram() {
@@ -126,7 +129,8 @@ struct RenderableShape {
 };
 
 // The Derived Classes: They inherit VAO, VBO, and vertices 
-struct Nucleus : public RenderableShape {
+class Nucleus : public RenderableShape {
+public:
     Nucleus() {
         float radiusX = 0.07f; // narrower width
         float radiusY = 0.10f; // taller height for an oval shape
@@ -135,7 +139,8 @@ struct Nucleus : public RenderableShape {
     }
 };
 
-struct Soma : public RenderableShape {
+class Soma : public RenderableShape {
+public:
     // Constructor to define the shape
     Soma() {
         float radius = 0.3f; // equal radius for a circle
@@ -144,7 +149,8 @@ struct Soma : public RenderableShape {
     }
 };
 
-struct Cytoplasm : public RenderableShape {
+class Cytoplasm : public RenderableShape {
+public:
     // Constructor to define the inner, denser shape
     Cytoplasm() {
         float radiusX = 0.25f; // narrower width
@@ -154,7 +160,8 @@ struct Cytoplasm : public RenderableShape {
     }
 };
 
-struct Dendrite : public RenderableShape {
+class Dendrite : public RenderableShape {
+public:
     // Added numPrimaryDendrites and somaRadius to the parameters
     void generateFractalTopology(int iterations, float somaRadius, int numPrimaryDendrites, float branchLength, float branchAngle, float baseThickness) {
 
@@ -294,10 +301,11 @@ struct Dendrite : public RenderableShape {
 };
 
 // TODO
-struct Axon : public RenderableShape {};
+class Axon : public RenderableShape {};
 
 // The Manager Class which owns the biology and the state
-struct Neuron {
+class Neuron {
+private:
     glm::vec2 position; 
 
     // LIF Model State Variables (For later use)
@@ -311,7 +319,7 @@ struct Neuron {
     Nucleus nucleus;
     Dendrite dendrite;
     Axon axon;
-
+public:
     // Called once from main() after window creation
     void initializeHardware() {
         soma.allocateVram();
