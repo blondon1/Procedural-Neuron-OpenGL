@@ -1,4 +1,5 @@
 #include "CellularMorphology.h"
+#include "Neuron.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -42,48 +43,7 @@ const char *fragmentShaderSource = "#version 330 core\n"
     "   }\n"
     "}\n";
 
-// The Manager Class which owns the biology and the state
-class Neuron {
-private:
-    glm::vec2 position; 
-
-    // LIF Model State Variables (For later use)
-    float membrane_potential = -65.0f;
-    float resting_potential = -65.0f;
-    float threshold = -50.0f;
-
-    // Composition: The Neuron HAS these structural parts
-    Soma soma;
-    Cytoplasm cytoplasm;
-    Nucleus nucleus;
-    Dendrite dendrite;
-    Axon axon;
-public:
-    // Called once from main() after window creation
-    void initializeHardware() {
-        soma.allocateVram();
-        cytoplasm.allocateVram();
-        nucleus.allocateVram();
-        dendrite.generateFractalTopology(4, 0.3f, 7, 0.08f, 22.0f, 0.35f);
-        dendrite.allocateVram();
-        // axon.allocateVram(); 
-        
-    }
-
-    // Called every frame inside the render loop
-    void Draw(unsigned int shaderProgram) {
-        dendrite.Draw(GL_TRIANGLES, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f, glm::vec2(0.0f, 0.0f), 0.0f);
-        soma.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.651f, 1.0f, 1.0f);
-        cytoplasm.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.15f, 0.75f, 1.0f, 1.0f);
-        nucleus.Draw(GL_TRIANGLE_FAN, shaderProgram, 0.0f, 0.0f, 0.38f, 1.0f);
-        
-    }
-};
-
 int main() {
-    
-    
-
     if (!glfwInit()) return -1;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -152,10 +112,10 @@ int main() {
         }
     }
     
-
     // Resource Deallocation
     glDeleteProgram(shaderProgram);
 
     glfwTerminate();
     return 0;
+
 }
