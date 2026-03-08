@@ -41,4 +41,7 @@ public:
 };
 
 // TODO
-class Axon : public RenderableShape {};
+class Axon : public RenderableShape {
+public:
+    void generateAxonTopology(float somaRadius);
+};

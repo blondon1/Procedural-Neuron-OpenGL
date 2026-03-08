@@ -74,8 +74,13 @@ void Dendrite::generateFractalTopology(int iterations, float somaRadius, int num
     // Loop to generate multipolar primary dendrites around the soma
     for (int t = 0; t < numPrimaryDendrites; t++) {
         
-        // Calculate starting position on the soma's perimeter
-        float theta = (2.0f * (float)std::numbers::pi * t) / numPrimaryDendrites;
+        // Calculate starting position on the soma's perimeter (Constrained to a 240-degree upper arc)
+        float startAngle = 45.0f * (float)std::numbers::pi / 180.0f; 
+        float arcSpan = 280.0f * (float)std::numbers::pi / 180.0f;
+
+        // Cast 't' to a float to prevent integer division truncation
+        float fraction = (float)t / (numPrimaryDendrites - 1);
+        float theta = startAngle + (arcSpan * fraction);
         
         // Add a slight randomized offset so primary dendrites aren't perfectly symmetrical
         std::uniform_real_distribution<float> trunkOffset(-0.2f, 0.2f);
@@ -155,4 +160,35 @@ void Dendrite::generateFractalTopology(int iterations, float somaRadius, int num
             }
         }
     }
+}
+
+void Axon::generateAxonTopology(float somaRadius) {
+    vertices.clear();
+
+    // Calculate the spatial anchor on the X-axis
+    // Submerge the hillock base into the soma to prevent a visual tangent gap
+    float anchorDepth = 0.045f;
+    float startX = somaRadius - anchorDepth;
+    float endX = startX + 0.2f; // Extend the stump to the right by 0.2 units
+
+    // efine the vertical (Y-axis) taper (Height instead of Width)
+    float baseHalfHeight = 0.07f;  // Massive base connecting to the eastern pole of the soma
+    float tipHalfHeight = 0.025f;  // Narrow tip connecting to the future shaft
+
+    // Construct the four geometric corners mapped to the right side
+    glm::vec3 topLeft(startX, baseHalfHeight, 0.0f);
+    glm::vec3 bottomLeft(startX, -baseHalfHeight, 0.0f);
+    glm::vec3 topRight(endX, tipHalfHeight, 0.0f);
+    glm::vec3 bottomRight(endX, -tipHalfHeight, 0.0f);
+
+    // Push Triangle 1 Counter-clockwise
+    vertices.push_back(bottomLeft);
+    vertices.push_back(bottomRight);
+    vertices.push_back(topLeft);
+
+    // Push Triangle 2 Counter-clockwise
+    vertices.push_back(bottomRight);
+    vertices.push_back(topRight);
+    vertices.push_back(topLeft);
+
 }

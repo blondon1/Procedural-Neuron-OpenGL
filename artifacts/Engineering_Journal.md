@@ -113,3 +113,7 @@ Need to solve the geometric friction on the CPU by mutating the underlying data 
 
 3/4/2026
 Now that I have a working demo of the neuron morphology, I will encapsulate my classes using Object-Oriented Design (OOD) principles. I am organizing my sections of logic into different files to ensure faster compile times as the project scales and to enforce strict structural organization overall. Blueprint declarations will be isolated into .h header files, while massive geometric functions will be extracted into .cpp implementation files accordingly.
+
+3/8/2026
+![e.g.](neuron_anatomy.jpg)
+Now that the OOD refactoring is complete and the translation units are compiling cleanly, today's goal is to implement the complete axon morphology from start to finish. I am organizing the logic into strict phases so I can verify the geometry visually at each step and avoid massive debugging headaches. Phase 1 reserves a spatial exclusion zone on the right side of the soma by tweaking the dendrite arc math, giving the axon hillock a dedicated slot without overlapping. Phase 2 will weld a long, uniform transmission shaft directly to the hillock's coordinates to keep it as a single, optimized OpenGL draw call. For Phase 3, I plan to attach a shallow L-System at the end of the shaft for the axon terminals, using fewer iterations and thicker endpoints for the synapses. I am purposefully deferring the myelin sheaths for now to keep the complexity low and ensure the foundational MVP is mathematically sound before adding extra mesh layers.
