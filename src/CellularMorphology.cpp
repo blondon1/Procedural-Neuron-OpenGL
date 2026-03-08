@@ -165,6 +165,8 @@ void Dendrite::generateFractalTopology(int iterations, float somaRadius, int num
 void Axon::generateAxonTopology(float somaRadius) {
     vertices.clear();
 
+    //PHASE 1: AXON HILLOCK
+
     // Calculate the spatial anchor on the X-axis
     // Submerge the hillock base into the soma to prevent a visual tangent gap
     float anchorDepth = 0.045f;
@@ -191,4 +193,47 @@ void Axon::generateAxonTopology(float somaRadius) {
     vertices.push_back(topRight);
     vertices.push_back(topLeft);
 
+    // PHASE 2: TRANSMISSION SHAFT
+    
+    // Define the macroscopic shaft constraints
+    float shaftLength = 2.5f; 
+    int numSegments = 30; // The resolution of our curve
+    float segmentLength = shaftLength / numSegments;
+
+    // Define the Sinusoidal Wave Mechanics
+    float amplitude = 0.12f; // How high/low the biological wave drifts
+    float frequency = 3.5f;  // How many oscillations occur along the length
+
+    // Track the anchor point as we build the chain
+    glm::vec2 currentPos(endX, 0.0f); // Starts exactly at the hillock tip
+
+    // Generate the curvilinear mesh
+    for (int i = 0; i < numSegments; i++) {
+        // Calculate the X and Y coordinates for the end of this micro-segment
+        float localizedX = (i + 1) * segmentLength;
+        float nextX = endX + localizedX;
+        
+        // Execute the sine wave calculation for the Y-axis
+        float nextY = amplitude * (1.0f - std::cos(frequency * localizedX));
+
+        // Construct the four geometric corners of this specific micro-segment.
+        // We add/subtract tipHalfHeight to maintain a uniform biological thickness.
+        glm::vec3 shaftTopLeft(currentPos.x, currentPos.y + tipHalfHeight, 0.0f);
+        glm::vec3 shaftBottomLeft(currentPos.x, currentPos.y - tipHalfHeight, 0.0f);
+        glm::vec3 shaftTopRight(nextX, nextY + tipHalfHeight, 0.0f);
+        glm::vec3 shaftBottomRight(nextX, nextY - tipHalfHeight, 0.0f);
+
+        // Push Triangle A (Counter-clockwise winding)
+        vertices.push_back(shaftBottomLeft);
+        vertices.push_back(shaftBottomRight);
+        vertices.push_back(shaftTopLeft);
+
+        // Push Triangle B (Counter-clockwise winding)
+        vertices.push_back(shaftBottomRight);
+        vertices.push_back(shaftTopRight);
+        vertices.push_back(shaftTopLeft);
+
+        // Step forward: the end of this segment becomes the start of the next
+        currentPos = glm::vec2(nextX, nextY);
+    }
 }
