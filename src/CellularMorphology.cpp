@@ -196,7 +196,7 @@ void Axon::generateAxonTopology(float somaRadius) {
     // PHASE 2: TRANSMISSION SHAFT
     
     // Define the macroscopic shaft constraints
-    float shaftLength = 2.5f; 
+    float shaftLength = 1.0f; 
     int numSegments = 30; // The resolution of our curve
     float segmentLength = shaftLength / numSegments;
 
@@ -235,5 +235,81 @@ void Axon::generateAxonTopology(float somaRadius) {
 
         // Step forward: the end of this segment becomes the start of the next
         currentPos = glm::vec2(nextX, nextY);
+
     }
+
+    // PHASE 3: AXON TERMINALS
+    
+    // Establish the Grafting Point and Tangent
+    float slope = amplitude * frequency * std::sin(frequency * shaftLength);
+    float terminalAngle = std::atan2(slope, 1.0f);
+
+    // Generate Localized Terminal DNA (L-System Strategy approach)
+    int termIterations = 5; // Fewer iterations than dendrites for a shallower arbor
+    std::string termDNA = "F"; 
+    
+    std::random_device rdTerm;
+    std::mt19937 genTerm(rdTerm());
+    std::uniform_real_distribution<float> probMatrix(0.0f, 1.0f);
+
+    for (int i = 0; i < termIterations; i++) {
+        std::string nextString = "";
+        for (char c : termDNA) {
+            if (c == 'F') {
+                float p = probMatrix(genTerm);
+                if (p < 0.40f) nextString += "F[-F]";      // 40% Left
+                else if (p < 0.80f) nextString += "F[+F]"; // 40% Right
+                else nextString += "F[-F][+F]";            // 20% Bilateral
+            } else {
+                nextString += c;
+            }
+        }
+        termDNA = nextString;
+    }
+
+    // Execute the Terminal Geometry
+    float termLength = 0.08f; 
+    float termSpreadAngle = 35.0f * (float)std::numbers::pi / 180.0f;
+    std::uniform_real_distribution<float> microDrift(-4.0f, 4.0f);
+
+    // Anchor the Turtle exactly at the end of the shaft ('currentPos') facing the calculated tangent
+    TurtleState tState = { currentPos, terminalAngle, tipHalfHeight * 1.5f };
+    std::stack<TurtleState> tStack;
+
+    for (char c : termDNA) {
+        if (c == 'F') {
+            glm::vec2 termEnd;
+            termEnd.x = tState.position.x + std::cos(tState.angle) * termLength;
+            termEnd.y = tState.position.y + std::sin(tState.angle) * termLength;
+
+            glm::vec2 perp(-std::sin(tState.angle), std::cos(tState.angle));
+            
+            float startHalf = tState.thickness / 2.0f;
+            float endHalf = (tState.thickness * 0.75f) / 2.0f; 
+            if (endHalf < 0.003f) endHalf = 0.003f; // Enforce minimum thickness
+            
+            glm::vec3 bl(tState.position.x - perp.x * startHalf, tState.position.y - perp.y * startHalf, 0.0f);
+            glm::vec3 br(tState.position.x + perp.x * startHalf, tState.position.y + perp.y * startHalf, 0.0f);
+            glm::vec3 tl(termEnd.x - perp.x * endHalf, termEnd.y - perp.y * endHalf, 0.0f);
+            glm::vec3 tr(termEnd.x + perp.x * endHalf, termEnd.y + perp.y * endHalf, 0.0f);
+
+            vertices.push_back(bl); vertices.push_back(br); vertices.push_back(tl);
+            vertices.push_back(br); vertices.push_back(tr); vertices.push_back(tl);
+
+            tState.position = termEnd;
+            tState.thickness *= 0.75f;
+            tState.angle += microDrift(genTerm) * (float)std::numbers::pi / 180.0f;
+            
+        } else if (c == '+') {
+            tState.angle -= termSpreadAngle;
+        } else if (c == '-') {
+            tState.angle += termSpreadAngle;
+        } else if (c == '[') {
+            tStack.push(tState);
+            tState.thickness *= 0.85f; 
+        } else if (c == ']') {
+            tState = tStack.top();
+            tStack.pop();
+        }
+    }  
 }
