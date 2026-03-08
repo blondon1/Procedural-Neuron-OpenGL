@@ -74,8 +74,13 @@ void Dendrite::generateFractalTopology(int iterations, float somaRadius, int num
     // Loop to generate multipolar primary dendrites around the soma
     for (int t = 0; t < numPrimaryDendrites; t++) {
         
-        // Calculate starting position on the soma's perimeter
-        float theta = (2.0f * (float)std::numbers::pi * t) / numPrimaryDendrites;
+        // Calculate starting position on the soma's perimeter (Constrained to a 240-degree upper arc)
+        float startAngle = 45.0f * (float)std::numbers::pi / 180.0f; 
+        float arcSpan = 280.0f * (float)std::numbers::pi / 180.0f;
+
+        // Cast 't' to a float to prevent integer division truncation
+        float fraction = (float)t / (numPrimaryDendrites - 1);
+        float theta = startAngle + (arcSpan * fraction);
         
         // Add a slight randomized offset so primary dendrites aren't perfectly symmetrical
         std::uniform_real_distribution<float> trunkOffset(-0.2f, 0.2f);
@@ -155,4 +160,156 @@ void Dendrite::generateFractalTopology(int iterations, float somaRadius, int num
             }
         }
     }
+}
+
+void Axon::generateAxonTopology(float somaRadius) {
+    vertices.clear();
+
+    //PHASE 1: AXON HILLOCK
+
+    // Calculate the spatial anchor on the X-axis
+    // Submerge the hillock base into the soma to prevent a visual tangent gap
+    float anchorDepth = 0.045f;
+    float startX = somaRadius - anchorDepth;
+    float endX = startX + 0.2f; // Extend the stump to the right by 0.2 units
+
+    // efine the vertical (Y-axis) taper (Height instead of Width)
+    float baseHalfHeight = 0.07f;  // Massive base connecting to the eastern pole of the soma
+    float tipHalfHeight = 0.025f;  // Narrow tip connecting to the future shaft
+
+    // Construct the four geometric corners mapped to the right side
+    glm::vec3 topLeft(startX, baseHalfHeight, 0.0f);
+    glm::vec3 bottomLeft(startX, -baseHalfHeight, 0.0f);
+    glm::vec3 topRight(endX, tipHalfHeight, 0.0f);
+    glm::vec3 bottomRight(endX, -tipHalfHeight, 0.0f);
+
+    // Push Triangle 1 Counter-clockwise
+    vertices.push_back(bottomLeft);
+    vertices.push_back(bottomRight);
+    vertices.push_back(topLeft);
+
+    // Push Triangle 2 Counter-clockwise
+    vertices.push_back(bottomRight);
+    vertices.push_back(topRight);
+    vertices.push_back(topLeft);
+
+    // PHASE 2: TRANSMISSION SHAFT
+    
+    // Define the macroscopic shaft constraints
+    float shaftLength = 1.0f; 
+    int numSegments = 30; // The resolution of our curve
+    float segmentLength = shaftLength / numSegments;
+
+    // Define the Sinusoidal Wave Mechanics
+    float amplitude = 0.12f; // How high/low the biological wave drifts
+    float frequency = 3.5f;  // How many oscillations occur along the length
+
+    // Track the anchor point as we build the chain
+    glm::vec2 currentPos(endX, 0.0f); // Starts exactly at the hillock tip
+
+    // Generate the curvilinear mesh
+    for (int i = 0; i < numSegments; i++) {
+        // Calculate the X and Y coordinates for the end of this micro-segment
+        float localizedX = (i + 1) * segmentLength;
+        float nextX = endX + localizedX;
+        
+        // Execute the sine wave calculation for the Y-axis
+        float nextY = amplitude * (1.0f - std::cos(frequency * localizedX));
+
+        // Construct the four geometric corners of this specific micro-segment.
+        // We add/subtract tipHalfHeight to maintain a uniform biological thickness.
+        glm::vec3 shaftTopLeft(currentPos.x, currentPos.y + tipHalfHeight, 0.0f);
+        glm::vec3 shaftBottomLeft(currentPos.x, currentPos.y - tipHalfHeight, 0.0f);
+        glm::vec3 shaftTopRight(nextX, nextY + tipHalfHeight, 0.0f);
+        glm::vec3 shaftBottomRight(nextX, nextY - tipHalfHeight, 0.0f);
+
+        // Push Triangle A (Counter-clockwise winding)
+        vertices.push_back(shaftBottomLeft);
+        vertices.push_back(shaftBottomRight);
+        vertices.push_back(shaftTopLeft);
+
+        // Push Triangle B (Counter-clockwise winding)
+        vertices.push_back(shaftBottomRight);
+        vertices.push_back(shaftTopRight);
+        vertices.push_back(shaftTopLeft);
+
+        // Step forward: the end of this segment becomes the start of the next
+        currentPos = glm::vec2(nextX, nextY);
+
+    }
+
+    // PHASE 3: AXON TERMINALS
+    
+    // Establish the Grafting Point and Tangent
+    float slope = amplitude * frequency * std::sin(frequency * shaftLength);
+    float terminalAngle = std::atan2(slope, 1.0f);
+
+    // Generate Localized Terminal DNA (L-System Strategy approach)
+    int termIterations = 5; // Fewer iterations than dendrites for a shallower arbor
+    std::string termDNA = "F"; 
+    
+    std::random_device rdTerm;
+    std::mt19937 genTerm(rdTerm());
+    std::uniform_real_distribution<float> probMatrix(0.0f, 1.0f);
+
+    for (int i = 0; i < termIterations; i++) {
+        std::string nextString = "";
+        for (char c : termDNA) {
+            if (c == 'F') {
+                float p = probMatrix(genTerm);
+                if (p < 0.40f) nextString += "F[-F]";      // 40% Left
+                else if (p < 0.80f) nextString += "F[+F]"; // 40% Right
+                else nextString += "F[-F][+F]";            // 20% Bilateral
+            } else {
+                nextString += c;
+            }
+        }
+        termDNA = nextString;
+    }
+
+    // Execute the Terminal Geometry
+    float termLength = 0.08f; 
+    float termSpreadAngle = 35.0f * (float)std::numbers::pi / 180.0f;
+    std::uniform_real_distribution<float> microDrift(-4.0f, 4.0f);
+
+    // Anchor the Turtle exactly at the end of the shaft ('currentPos') facing the calculated tangent
+    TurtleState tState = { currentPos, terminalAngle, tipHalfHeight * 1.5f };
+    std::stack<TurtleState> tStack;
+
+    for (char c : termDNA) {
+        if (c == 'F') {
+            glm::vec2 termEnd;
+            termEnd.x = tState.position.x + std::cos(tState.angle) * termLength;
+            termEnd.y = tState.position.y + std::sin(tState.angle) * termLength;
+
+            glm::vec2 perp(-std::sin(tState.angle), std::cos(tState.angle));
+            
+            float startHalf = tState.thickness / 2.0f;
+            float endHalf = (tState.thickness * 0.75f) / 2.0f; 
+            if (endHalf < 0.003f) endHalf = 0.003f; // Enforce minimum thickness
+            
+            glm::vec3 bl(tState.position.x - perp.x * startHalf, tState.position.y - perp.y * startHalf, 0.0f);
+            glm::vec3 br(tState.position.x + perp.x * startHalf, tState.position.y + perp.y * startHalf, 0.0f);
+            glm::vec3 tl(termEnd.x - perp.x * endHalf, termEnd.y - perp.y * endHalf, 0.0f);
+            glm::vec3 tr(termEnd.x + perp.x * endHalf, termEnd.y + perp.y * endHalf, 0.0f);
+
+            vertices.push_back(bl); vertices.push_back(br); vertices.push_back(tl);
+            vertices.push_back(br); vertices.push_back(tr); vertices.push_back(tl);
+
+            tState.position = termEnd;
+            tState.thickness *= 0.75f;
+            tState.angle += microDrift(genTerm) * (float)std::numbers::pi / 180.0f;
+            
+        } else if (c == '+') {
+            tState.angle -= termSpreadAngle;
+        } else if (c == '-') {
+            tState.angle += termSpreadAngle;
+        } else if (c == '[') {
+            tStack.push(tState);
+            tState.thickness *= 0.85f; 
+        } else if (c == ']') {
+            tState = tStack.top();
+            tStack.pop();
+        }
+    }  
 }

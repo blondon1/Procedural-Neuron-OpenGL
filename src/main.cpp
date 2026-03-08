@@ -82,7 +82,15 @@ int main() {
     // Define the Orthographic Projection Matrix to replace the distortion of the normalized device coordinates (NDC)
     glUseProgram(shaderProgram);
     float aspectRatio = 800.0f / 600.0f;
-    glm::mat4 projection = glm::ortho(-aspectRatio, aspectRatio, -1.0f, 1.0f, -1.0f, 1.0f);
+    float cameraZoom = 1.1f;
+    float cameraPanX = 0.7f;
+    glm::mat4 projection = glm::ortho(
+        (-aspectRatio * cameraZoom) + cameraPanX, 
+        (aspectRatio * cameraZoom) + cameraPanX, 
+        -cameraZoom, 
+        cameraZoom, 
+        -1.0f, 1.0f
+    );
     int projLoc = glGetUniformLocation(shaderProgram, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
