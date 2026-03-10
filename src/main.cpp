@@ -101,6 +101,10 @@ int main() {
         //GPU side
         myNeuron.initializeHardware();
 
+        // Temporal State
+        float deltaTime = 0.0f;  // The biological time passed between the current and previous frame
+        float lastFrame = 0.0f;  // The absolute timestamp of the previous frame
+
         // Execution (The Render Loop)
         while (!glfwWindowShouldClose(window)) {
             /*graphics debugging
@@ -108,10 +112,29 @@ int main() {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             */
 
+            // Holding the spacebar pumps positive current into the dendrites
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+                // Inject a steady stream of voltage per frame
+                myNeuron.InjectStimulus(8.0f); 
+                std::cout << "[HARDWARE] SPACEBAR PRESSED!\n"; 
+            }
+
+            // Calculate the rigid Delta Time for the physics state machine
+            float currentFrame = glfwGetTime();
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
+
+            // std::cout << "Delta Time: " << deltaTime << " seconds\n";
+
+
+
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
             glUseProgram(shaderProgram);
+
+            myNeuron.Update(deltaTime);
+
             // The entire biological drawing process is triggered by one command
             myNeuron.Draw(shaderProgram);
 
