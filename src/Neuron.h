@@ -18,6 +18,10 @@ private:
     float resetPotential = -80.0f;     // The hyperpolarization dip after firing
     float timeConstant = 15.0f;        // The resistance/capacitance decay coefficient
 
+    // BIOLOGICAL CHRONOMETERS
+    float absoluteRefractoryPeriod = 50.0f; // The physical lockout duration in milliseconds
+    float currentRefractoryTime = 0.0f;     // The live tracking state
+
     // Live state
     float membranePotential = -70.0f;  // The live fluctuating voltage 
 

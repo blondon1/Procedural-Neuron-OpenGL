@@ -124,7 +124,7 @@ int main() {
             deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
-            // std::cout << "Delta Time: " << deltaTime << " seconds\n";
+            std::cout << "Delta Time: " << deltaTime << " seconds\n";
 
 
 

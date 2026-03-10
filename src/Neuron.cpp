@@ -41,20 +41,43 @@ void Neuron::Draw(unsigned int shaderProgram) {
 }
 
 void Neuron::InjectStimulus(float millivolts) {
+    // Check the chronological lock. If active, silently reject the hardware interrupt
+    if (currentRefractoryTime > 0.0f) {
+        return; 
+    }
+    
+    // If the channels are open, accept the current
     membranePotential += millivolts;
+    std::cout << "[HARDWARE] Stimulus Injected. Current Vm: " << membranePotential << " mV\n";
 }
 
 void Neuron::Update(float deltaTime) {
     float dt_ms = deltaTime * 1000.0f;
 
-    if (membranePotential >= thresholdPotential) {
+    // --- STATE 1: THE REFRACTORY LOCKOUT ---
+    if (currentRefractoryTime > 0.0f) {
+        // Count down the biological clock
+        currentRefractoryTime -= dt_ms;
+        
+        // Rigorously clamp the voltage to the reset state while channels recover
         membranePotential = resetPotential; 
-        std::cout << "[PHYSICS] ACTION POTENTIAL FIRED! Voltage reset to: " << membranePotential << " mV\n";
+        
+        // Halt all further physics calculations this frame
+        return; 
+    }
+
+    // --- STATE 2: THE LIF INTEGRATION ---
+    if (membranePotential >= thresholdPotential) {
+        // The neuron fires. Trigger the Action Potential and initiate the chronological lock.
+        membranePotential = resetPotential; 
+        currentRefractoryTime = absoluteRefractoryPeriod; 
+        
+        std::cout << "[PHYSICS] ACTION POTENTIAL FIRED! Entering Refractory Lockout.\n";
     } else {
+        // Standard exponential decay
         float derivative = (restingPotential - membranePotential) / timeConstant;
         membranePotential += derivative * dt_ms;
         
-        // Only print the leak if it is actively decaying 
         if (membranePotential > restingPotential + 0.1f) {
             std::cout << "[PHYSICS] Leaking... Vm: " << membranePotential << " mV\n";
         }
