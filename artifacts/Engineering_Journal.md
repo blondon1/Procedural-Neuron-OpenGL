@@ -117,3 +117,24 @@ Now that I have a working demo of the neuron morphology, I will encapsulate my c
 3/8/2026
 ![e.g.](neuron_anatomy.jpg)
 Now that the OOD refactoring is complete and the translation units are compiling cleanly, today's goal is to implement the complete axon morphology from start to finish. I am organizing the logic into strict phases so I can verify the geometry visually at each step and avoid massive debugging headaches. Phase 1 reserves a spatial exclusion zone on the right side of the soma by tweaking the dendrite arc math, giving the axon hillock a dedicated slot without overlapping. Phase 2 will weld a long, uniform transmission shaft directly to the hillock's coordinates to keep it as a single, optimized OpenGL draw call. For Phase 3, I plan to attach a shallow L-System at the end of the shaft for the axon terminals, using fewer iterations and thicker endpoints for the synapses. I am purposefully deferring the myelin sheaths for now to keep the complexity low and ensure the foundational MVP is mathematically sound before adding extra mesh layers.
+
+3/14/2026
+**Objective:** Upgrade from static geometry to dynamic computational physics and multi-agent networking.
+
+**The Physics Engine (LIF Model)**
+
+1. Chronometer: Bound the engine to real-world time via deltaTime to ensure frame-independent decay.
+
+2. Euler Integration: Simulated the biological membrane leak using discrete linear algebra steps (y=mx+b) instead of heavy continuous calculus.
+
+3. Action Potential & Lockout: Enforced a hard −55.0 mV firing threshold. Engineered a 50.0 ms absolute refractory period (a temporal lock) to force the membrane to ignore stimulus post-firing, mimicking closed sodium channels.
+
+**The Graph Topology (Networking)**
+
+1. Hardware Translation (O(1) Memory): Upgraded the Vertex Shader with a model matrix. Neurons are drawn once at the origin and translated directly on the GPU, allowing massive scaling without memory bloat.
+
+2. Topological Pointers: Built a Synapse struct (a directed edge) holding the target neuron's memory address and a neurotransmitter voltage weight.
+
+3. Communication: Upon firing, the presynaptic neuron forcefully executes an InjectStimulus command on its connected targets.
+
+**Result:** Overpowering the presynaptic leak triggers a mathematically verifiable chain reaction across the graph. Due to the refractory chronometers, the network displays emergent biological desensitization: if the target is spammed too quickly, it physically rejects the incoming signal.

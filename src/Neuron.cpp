@@ -1,5 +1,7 @@
 #include "Neuron.h"
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtc/type_ptr.hpp>         
 
 // Called once from main() after window creation
 void Neuron::initializeHardware() {
@@ -15,6 +17,10 @@ void Neuron::initializeHardware() {
 
 // Called every frame inside the render loop
 void Neuron::Draw(unsigned int shaderProgram) {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(worldPosition.x, worldPosition.y, 0.0f));
+    int modelLoc = glGetUniformLocation(shaderProgram, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     // Normalize the voltage to a 0.0 to 1.0 scale
     // -70mV = 0.0 (Resting) | -55mV = 1.0 (Action Potential Threshold)
     float normalizedActivity = (membranePotential - restingPotential) / (thresholdPotential - restingPotential);
@@ -54,7 +60,7 @@ void Neuron::InjectStimulus(float millivolts) {
 void Neuron::Update(float deltaTime) {
     float dt_ms = deltaTime * 1000.0f;
 
-    // --- STATE 1: THE REFRACTORY LOCKOUT ---
+    // STATE 1: THE REFRACTORY LOCKOUT
     if (currentRefractoryTime > 0.0f) {
         // Count down the biological clock
         currentRefractoryTime -= dt_ms;
@@ -66,13 +72,19 @@ void Neuron::Update(float deltaTime) {
         return; 
     }
 
-    // --- STATE 2: THE LIF INTEGRATION ---
+    // STATE 2: THE LIF INTEGRATION
     if (membranePotential >= thresholdPotential) {
-        // The neuron fires. Trigger the Action Potential and initiate the chronological lock.
+        // The neuron fires and locks its channels
         membranePotential = resetPotential; 
         currentRefractoryTime = absoluteRefractoryPeriod; 
-        
         std::cout << "[PHYSICS] ACTION POTENTIAL FIRED! Entering Refractory Lockout.\n";
+        
+        // NETWORK TRANSMISSION
+        // Iterate through the directed graph and expel mathematical neurotransmitters
+        for (Synapse& synapse : outgoingSynapses) {
+            synapse.target->InjectStimulus(synapse.weight);
+            std::cout << "[NETWORK] Neurotransmitters expelled! Injecting " << synapse.weight << " mV into target.\n";
+        }
     } else {
         // Standard exponential decay
         float derivative = (restingPotential - membranePotential) / timeConstant;
@@ -82,4 +94,12 @@ void Neuron::Update(float deltaTime) {
             std::cout << "[PHYSICS] Leaking... Vm: " << membranePotential << " mV\n";
         }
     }
+}
+
+void Neuron::SetPosition(float x, float y) {
+    worldPosition = glm::vec2(x, y);
+}
+
+void Neuron::AddSynapse(Neuron* targetNeuron, float neurotransmitterWeight) {
+    outgoingSynapses.push_back({targetNeuron, neurotransmitterWeight});
 }
