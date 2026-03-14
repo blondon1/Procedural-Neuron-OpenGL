@@ -1,9 +1,19 @@
 #pragma once
 #include "CellularMorphology.h"
+#include <vector>
+
+class Neuron;
+
+struct Synapse {
+    Neuron* target; // Memory address of the receiving neuron
+    float weight;   // The neurotransmitter payload (measured in mV)
+};
 
 // The Manager Class which owns the biology and the state
 class Neuron {
 private:
+    std::vector<Synapse> outgoingSynapses;
+    glm::vec2 worldPosition = glm::vec2(0.0f, 0.0f);
     glm::vec2 position; 
     // Composition: The Neuron HAS these structural parts
     Soma soma;
@@ -26,6 +36,9 @@ private:
     float membranePotential = -70.0f;  // The live fluctuating voltage 
 
 public:
+    void AddSynapse(Neuron* targetNeuron, float neurotransmitterWeight);
+    
+    void SetPosition(float x, float y);
     // Called once from main() after window creation
     void initializeHardware();
 

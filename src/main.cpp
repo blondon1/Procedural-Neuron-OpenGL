@@ -10,11 +10,13 @@
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "uniform mat4 projection;\n"
-    "out vec2 FragPos;\n" // payload for the Fragment Shader
+    "uniform mat4 model;\n" // INJECTED: The spatial translation matrix
+    "out vec2 FragPos;\n" 
     "void main()\n"
     "{\n"
-    "   gl_Position = projection * vec4(aPos, 1.0);\n" 
-    "   FragPos = vec2(aPos.x, aPos.y);\n" // Extract spatial coordinates
+    "   // Multiply local vertex by model matrix, then projection lens\n"
+    "   gl_Position = projection * model * vec4(aPos, 1.0);\n" 
+    "   FragPos = vec2(aPos.x, aPos.y);\n" // Kept local to preserve SDF blending
     "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
@@ -82,8 +84,8 @@ int main() {
     // Define the Orthographic Projection Matrix to replace the distortion of the normalized device coordinates (NDC)
     glUseProgram(shaderProgram);
     float aspectRatio = 800.0f / 600.0f;
-    float cameraZoom = 1.1f;
-    float cameraPanX = 0.7f;
+    float cameraZoom = 2.5f; // Expanded to encompass the network
+    float cameraPanX = 1.6f; // Shifted to frame the right-facing structure
     glm::mat4 projection = glm::ortho(
         (-aspectRatio * cameraZoom) + cameraPanX, 
         (aspectRatio * cameraZoom) + cameraPanX, 
@@ -96,47 +98,58 @@ int main() {
 
     //Scope for objects
     {
-        // CPU side
-        Neuron myNeuron;
-        //GPU side
-        myNeuron.initializeHardware();
+        // CPU SIDE: INSTANTIATION
+        // We delete 'myNeuron' and spawn two distinct biological agents
+        Neuron presynapticNeuron;
+        Neuron postsynapticNeuron;
+        
+        // Offset the target neuron 3.2 units to the right
+        postsynapticNeuron.SetPosition(3.2f, 0.0f);
+
+        // GPU SIDE: BUFFER ALLOCATION
+        // Both distinct objects must generate their geometry on the graphics card
+        presynapticNeuron.initializeHardware();
+        postsynapticNeuron.initializeHardware();
+
+        // TOPOLOGICAL WIRING
+        // Connect presynaptic to postsynaptic.
+        // We set the weight to a massive 16.0f mV. Because the target rests at -70mV 
+        // and triggers at -55mV, this single injection will instantly force it to fire.
+        presynapticNeuron.AddSynapse(&postsynapticNeuron, 16.0f);
 
         // Temporal State
-        float deltaTime = 0.0f;  // The biological time passed between the current and previous frame
-        float lastFrame = 0.0f;  // The absolute timestamp of the previous frame
+        float deltaTime = 0.0f;
 
-        // Execution (The Render Loop)
+        // TEMPORAL STATE
+        float lastFrame = 0.0f;  
+
+        // EXECUTION (THE RENDER LOOP)
         while (!glfwWindowShouldClose(window)) {
-            /*graphics debugging
-            glUseProgram(shaderProgram);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            */
 
-            // Holding the spacebar pumps positive current into the dendrites
+            // HARDWARE INTERRUPT:
             if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                // Inject a steady stream of voltage per frame
-                myNeuron.InjectStimulus(8.0f); 
+                // We STRICTLY only stimulate the left neuron to prove they are isolated
+                presynapticNeuron.InjectStimulus(8.0f); 
                 std::cout << "[HARDWARE] SPACEBAR PRESSED!\n"; 
             }
 
-            // Calculate the rigid Delta Time for the physics state machine
+            // Calculate the rigid Delta Time 
             float currentFrame = glfwGetTime();
             deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
-            std::cout << "Delta Time: " << deltaTime << " seconds\n";
-
-
+            // PHYSICS MECHANICS: Update BOTH discrete state machines
+            presynapticNeuron.Update(deltaTime);
+            postsynapticNeuron.Update(deltaTime);
 
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
             glUseProgram(shaderProgram);
 
-            myNeuron.Update(deltaTime);
-
-            // The entire biological drawing process is triggered by one command
-            myNeuron.Draw(shaderProgram);
+            // RENDER DISPATCH: Draw BOTH objects using the new spatial matrix
+            presynapticNeuron.Draw(shaderProgram);
+            postsynapticNeuron.Draw(shaderProgram);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
