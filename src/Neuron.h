@@ -29,7 +29,7 @@ private:
     float timeConstant = 15.0f;        // The resistance/capacitance decay coefficient
 
     // BIOLOGICAL CHRONOMETERS
-    float absoluteRefractoryPeriod = 50.0f; // The physical lockout duration in milliseconds
+    float absoluteRefractoryPeriod = 150.0f; // The physical lockout duration in milliseconds
     float currentRefractoryTime = 0.0f;     // The live tracking state
 
     // Live state
