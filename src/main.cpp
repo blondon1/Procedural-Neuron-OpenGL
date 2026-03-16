@@ -148,7 +148,7 @@ int main() {
             // STOCHASTIC BACKGROUND NOISE
             // 2% chance per frame to inject 5.0mV of natural biological noise
             if ((rand() % 100) < 2) {
-                presynapticNeuron.InjectStimulus(5.0f);
+                presynapticNeuron.InjectStimulus(12.0f);
             }
 
             // PHYSICS MECHANICS
