@@ -36,6 +36,9 @@ private:
     float membranePotential = -70.0f;  // The live fluctuating voltage 
 
 public:
+    // Spatial getter
+    glm::vec2 GetPosition() const { return worldPosition; }
+
     void AddSynapse(Neuron* targetNeuron, float neurotransmitterWeight);
     
     void SetPosition(float x, float y);

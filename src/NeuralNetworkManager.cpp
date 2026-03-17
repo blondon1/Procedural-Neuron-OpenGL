@@ -17,6 +17,30 @@ void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
         // Anchor to memory
         neurons.push_back(std::move(newNeuron));
     }
+
+    // Define the critical biological radius. Nodes closer than 4.0 units will connect.
+    float connectionRadius = 4.0f; 
+
+    for (size_t i = 0; i < neurons.size(); i++) {
+        for (size_t j = 0; j < neurons.size(); j++) {
+            // A biological neuron does not form a chemical synapse with its own soma
+            if (i == j) continue;
+
+            glm::vec2 posA = neurons[i]->GetPosition();
+            glm::vec2 posB = neurons[j]->GetPosition();
+
+            // GLM handles the heavy Pythagorean square root math natively
+            float distance = glm::distance(posA, posB);
+
+            if (distance <= connectionRadius) {
+                // Procedurally generate a variable neurotransmitter weight (10.0mV to 18.0mV)
+                // This ensures the network topology isn't perfectly uniform
+                float randomWeight = 10.0f + (static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 8.0f)); 
+                
+                neurons[i]->AddSynapse(neurons[j].get(), randomWeight);
+            }
+        }
+    }
 }
 
 void NeuralNetworkManager::Update(float deltaTime) {
