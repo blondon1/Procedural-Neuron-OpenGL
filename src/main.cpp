@@ -85,16 +85,8 @@ int main() {
     glUseProgram(shaderProgram);
     float aspectRatio = 800.0f / 600.0f;
     float cameraZoom = 2.5f; // Expanded to encompass the network
-    float cameraPanX = 1.6f; // Shifted to frame the right-facing structure
-    glm::mat4 projection = glm::ortho(
-        (-aspectRatio * cameraZoom) + cameraPanX, 
-        (aspectRatio * cameraZoom) + cameraPanX, 
-        -cameraZoom, 
-        cameraZoom, 
-        -1.0f, 1.0f
-    );
+    float cameraPanX = 1.6f; // Shifted to frame the right-facing structure  
     int projLoc = glGetUniformLocation(shaderProgram, "projection");
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
     //Scope for objects
     {
@@ -104,7 +96,7 @@ int main() {
         Neuron postsynapticNeuron;
         
         // Offset the target neuron 3.2 units to the right
-        postsynapticNeuron.SetPosition(3.2f, 0.0f);
+        postsynapticNeuron.SetPosition(2.3f, 0.0f);
 
         // GPU SIDE: BUFFER ALLOCATION
         // Both distinct objects must generate their geometry on the graphics card
@@ -123,31 +115,51 @@ int main() {
         // TEMPORAL STATE
         float lastFrame = 0.0f;  
 
-        // EXECUTION (THE RENDER LOOP)
+        // 4. EXECUTION (THE AUTONOMOUS RENDER LOOP)
         while (!glfwWindowShouldClose(window)) {
 
-            // HARDWARE INTERRUPT:
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                // We STRICTLY only stimulate the left neuron to prove they are isolated
-                presynapticNeuron.InjectStimulus(8.0f); 
-                std::cout << "[HARDWARE] SPACEBAR PRESSED!\n"; 
-            }
-
-            // Calculate the rigid Delta Time 
+            // CHRONOMETER & TEMPORAL DILATION
             float currentFrame = glfwGetTime();
-            deltaTime = currentFrame - lastFrame;
+            // SLOW-MODE: Multiply real time by 0.3f to make the pulse visually readable
+            deltaTime = (currentFrame - lastFrame) * 0.3f; 
             lastFrame = currentFrame;
 
-            // PHYSICS MECHANICS: Update BOTH discrete state machines
+            // HARDWARE INTERRUPTS (THE CAMERA)
+            // Use Up/Down arrows to manipulate the zoom scale
+            if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                cameraZoom -= 2.0f * (deltaTime / 0.3f); // Normalize speed against slow-mode
+                if (cameraZoom < 0.5f) cameraZoom = 0.5f; // Prevent mathematical inversion
+            }
+            if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                cameraZoom += 2.0f * (deltaTime / 0.3f); 
+            }
+
+            // DYNAMIC PROJECTION MATRIX
+            // Recalculate and dispatch the camera lens every single frame
+            glm::mat4 projection = glm::ortho(
+                (-aspectRatio * cameraZoom) + cameraPanX, 
+                (aspectRatio * cameraZoom) + cameraPanX, 
+                -cameraZoom, 
+                cameraZoom, 
+                -1.0f, 1.0f
+            );
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+            // STOCHASTIC BACKGROUND NOISE
+            // 2% chance per frame to inject 5.0mV of natural biological noise
+            if ((rand() % 100) < 2) {
+                presynapticNeuron.InjectStimulus(12.0f);
+            }
+
+            // PHYSICS MECHANICS
             presynapticNeuron.Update(deltaTime);
             postsynapticNeuron.Update(deltaTime);
 
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-
             glUseProgram(shaderProgram);
 
-            // RENDER DISPATCH: Draw BOTH objects using the new spatial matrix
+            // RENDER DISPATCH
             presynapticNeuron.Draw(shaderProgram);
             postsynapticNeuron.Draw(shaderProgram);
 

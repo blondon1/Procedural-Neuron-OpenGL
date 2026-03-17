@@ -138,3 +138,27 @@ Now that the OOD refactoring is complete and the translation units are compiling
 3. Communication: Upon firing, the presynaptic neuron forcefully executes an InjectStimulus command on its connected targets.
 
 **Result:** Overpowering the presynaptic leak triggers a mathematically verifiable chain reaction across the graph. Due to the refractory chronometers, the network displays emergent biological desensitization: if the target is spammed too quickly, it physically rejects the incoming signal.
+
+3/17/2026
+
+**Objective:** Transition the binary graph into an autonomous, visually verifiable simulation with continuous spatial signal delay.
+
+Autonomous Temporal Mechanics
+
+1. Spatial Calibration: Adjusted the postsynaptic matrix offset to 2.5 units, physically interlocking the presynaptic axon terminals with the dendritic arbor to create a continuous Synaptic Cleft.
+
+2. Temporal Dilation: Injected a 0.3 scalar into the deltaTime chronometer to slow the physics engine (Slow-Mode), expanding the visual duration of Euler integration and Action Potential spikes for human optical parsing.
+
+3. Stochastic Hardware: Severed manual keyboard interrupts. Engineered a modulo-based probability generator to inject 12.0 mV of biological "background noise" with a 5% frame probability, allowing the network to pulse and fire autonomously.
+
+4. Dynamic Camera: Replaced the static Orthographic Projection with a mutable state matrix mapped to hardware keys, enabling dynamic scaling of the viewport boundaries.
+
+Optical Spatial Propagation
+
+1. Memory Architecture: Engineered a SignalPacket struct to track a normalized progress float (0.0 to 1.0). Replaced instant neurotransmitter injection with a dynamic std::vector insertion to support high-frequency traveling pulse trains.
+
+2. Kinematic State Machine: Packets scale their internal clocks against absolute deltaTime. Network pointers execute InjectStimulus strictly upon reaching terminal boundaries (1.0), safely erasing the utilized packet via index iteration.
+
+3. Parametric Rendering: Extracted the C1 continuous inverted cosine wave (y=A(1−cos(Bx))) from the L-System generator. Bound the kinetic progress float to the X-axis to dynamically calculate the Y spline coordinate, rendering a fixed-function GL_POINTS optical tracker directly on the GPU to visualize the signal traveling down the axon.
+
+**Result:** The system is now a fully autonomous, mathematically verified binary synapse. Biological noise mathematically accumulates until the threshold is breached, spawning a discrete geometric entity that physically traverses the axon spline before triggering the target node's integration loop.
