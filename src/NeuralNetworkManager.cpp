@@ -1,35 +1,33 @@
 #include "NeuralNetworkManager.h"
 #include <cstdlib> // Required for rand()
 
-void NeuralNetworkManager::InitializeBinarySynapse() {
-    // Instantiate onto the heap to guarantee stable memory addresses
-    auto preNeuron = std::make_unique<Neuron>();
-    auto postNeuron = std::make_unique<Neuron>();
+void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
+    for (int i = 0; i < numNeurons; i++) {
+        // Instantiate on the heap
+        auto newNeuron = std::make_unique<Neuron>();
+        newNeuron->initializeHardware();
 
-    // Initialize GPU hardware
-    preNeuron->initializeHardware();
-    postNeuron->initializeHardware();
+        // Generate stochastic spatial coordinates (Spread from -6.0f to +6.0f)
+        float randomX = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
+        float randomY = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
 
-    // Calibrate spatial matrix (matching your 2.5f cleft offset)
-    preNeuron->SetPosition(0.0f, 0.0f);
-    postNeuron->SetPosition(2.3f, 0.0f);
+        // Apply the matrix offset
+        newNeuron->SetPosition(randomX, randomY);
 
-    // Establish topological pointer bridge (Safe because they are on the heap)
-    preNeuron->AddSynapse(postNeuron.get(), 16.0f);
-
-    // Transfer memory ownership to the vector
-    neurons.push_back(std::move(preNeuron));
-    neurons.push_back(std::move(postNeuron));
+        // Anchor to memory
+        neurons.push_back(std::move(newNeuron));
+    }
 }
 
 void NeuralNetworkManager::Update(float deltaTime) {
-    // Stochastic Background Noise (Applied strictly to the presynaptic node)
-    if (!neurons.empty() && (rand() % 100) < 5) {
-        neurons[0]->InjectStimulus(12.0f);
-    }
-
-    // Execute physics state machines for all nodes
+    // Universal Stochastic Background Noise
     for (auto& neuron : neurons) {
+        // 1% chance per frame for ANY neuron to receive biological noise
+        if ((rand() % 100) < 1) {
+            neuron->InjectStimulus(12.0f);
+        }
+        
+        // Execute discrete physics state machine
         neuron->Update(deltaTime);
     }
 }

@@ -12,8 +12,7 @@ public:
     NeuralNetworkManager() = default;
     ~NeuralNetworkManager() = default;
 
-    // Reconstructs the exact binary synapse we currently have
-    void InitializeBinarySynapse();
+    void InitializeProceduralGraph(int numNeurons);
 
     // Centralized execution controllers
     void Update(float deltaTime);

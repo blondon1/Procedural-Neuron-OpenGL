@@ -92,7 +92,7 @@ int main() {
     {
         // --- 1. THE NEURAL GRAPH CONTROLLER (INITIALIZE ONCE) ---
         NeuralNetworkManager neuralGraph;
-        neuralGraph.InitializeBinarySynapse();
+        neuralGraph.InitializeProceduralGraph(20);
 
         // --- 2. TEMPORAL STATE ---
         float deltaTime = 0.0f;
