@@ -20,6 +20,7 @@ add_executable(Neurons2D
     src/RenderableShape.cpp 
     src/CellularMorphology.cpp 
     src/Neuron.cpp
+    src/NeuralNetworkManager.cpp
 )
 target_link_libraries(Neurons2D PRIVATE ${DEPS})
 target_include_directories(Neurons2D PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

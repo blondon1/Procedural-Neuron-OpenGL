@@ -1,5 +1,5 @@
 #include "CellularMorphology.h"
-#include "Neuron.h"
+#include "NeuralNetworkManager.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -81,75 +81,60 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Define the Orthographic Projection Matrix to replace the distortion of the normalized device coordinates (NDC)
+    // CAMERA STATE VARIABLES
     glUseProgram(shaderProgram);
     float aspectRatio = 800.0f / 600.0f;
-    float cameraZoom = 2.5f; // Expanded to encompass the network
-    float cameraPanX = 1.6f; // Shifted to frame the right-facing structure
-    glm::mat4 projection = glm::ortho(
-        (-aspectRatio * cameraZoom) + cameraPanX, 
-        (aspectRatio * cameraZoom) + cameraPanX, 
-        -cameraZoom, 
-        cameraZoom, 
-        -1.0f, 1.0f
-    );
+    float cameraZoom = 2.0f; 
+    float cameraPanX = 1.15f; 
     int projLoc = glGetUniformLocation(shaderProgram, "projection");
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    //Scope for objects
+    // Scope for objects
     {
-        // CPU SIDE: INSTANTIATION
-        // We delete 'myNeuron' and spawn two distinct biological agents
-        Neuron presynapticNeuron;
-        Neuron postsynapticNeuron;
-        
-        // Offset the target neuron 3.2 units to the right
-        postsynapticNeuron.SetPosition(3.2f, 0.0f);
+        // --- 1. THE NEURAL GRAPH CONTROLLER (INITIALIZE ONCE) ---
+        NeuralNetworkManager neuralGraph;
+        neuralGraph.InitializeBinarySynapse();
 
-        // GPU SIDE: BUFFER ALLOCATION
-        // Both distinct objects must generate their geometry on the graphics card
-        presynapticNeuron.initializeHardware();
-        postsynapticNeuron.initializeHardware();
-
-        // TOPOLOGICAL WIRING
-        // Connect presynaptic to postsynaptic.
-        // We set the weight to a massive 16.0f mV. Because the target rests at -70mV 
-        // and triggers at -55mV, this single injection will instantly force it to fire.
-        presynapticNeuron.AddSynapse(&postsynapticNeuron, 16.0f);
-
-        // Temporal State
+        // --- 2. TEMPORAL STATE ---
         float deltaTime = 0.0f;
-
-        // TEMPORAL STATE
         float lastFrame = 0.0f;  
 
-        // EXECUTION (THE RENDER LOOP)
+        // --- 3. EXECUTION (THE AUTONOMOUS RENDER LOOP) ---
         while (!glfwWindowShouldClose(window)) {
 
-            // HARDWARE INTERRUPT:
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                // We STRICTLY only stimulate the left neuron to prove they are isolated
-                presynapticNeuron.InjectStimulus(8.0f); 
-                std::cout << "[HARDWARE] SPACEBAR PRESSED!\n"; 
-            }
-
-            // Calculate the rigid Delta Time 
+            // CHRONOMETER & TEMPORAL DILATION
             float currentFrame = glfwGetTime();
-            deltaTime = currentFrame - lastFrame;
+            deltaTime = (currentFrame - lastFrame) * 0.3f; // SLOW-MODE
             lastFrame = currentFrame;
 
-            // PHYSICS MECHANICS: Update BOTH discrete state machines
-            presynapticNeuron.Update(deltaTime);
-            postsynapticNeuron.Update(deltaTime);
+            // HARDWARE INTERRUPTS (THE CAMERA)
+            if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                cameraZoom -= 2.0f * (deltaTime / 0.3f); 
+                if (cameraZoom < 0.5f) cameraZoom = 0.5f; 
+            }
+            if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                cameraZoom += 2.0f * (deltaTime / 0.3f); 
+            }
+
+            // DYNAMIC PROJECTION MATRIX
+            glm::mat4 projection = glm::ortho(
+                (-aspectRatio * cameraZoom) + cameraPanX, 
+                (aspectRatio * cameraZoom) + cameraPanX, 
+                -cameraZoom, 
+                cameraZoom, 
+                -1.0f, 1.0f
+            );
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+            // THE NEURAL GRAPH CONTROLLER: PHYSICS MECHANICS
+            // (Stochastic noise is now handled cleanly inside this Update method)
+            neuralGraph.Update(deltaTime);
 
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-
             glUseProgram(shaderProgram);
 
-            // RENDER DISPATCH: Draw BOTH objects using the new spatial matrix
-            presynapticNeuron.Draw(shaderProgram);
-            postsynapticNeuron.Draw(shaderProgram);
+            // THE NEURAL GRAPH CONTROLLER: RENDER DISPATCH
+            neuralGraph.Draw(shaderProgram);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
