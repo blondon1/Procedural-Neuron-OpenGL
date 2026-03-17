@@ -2,41 +2,58 @@
 #include <cstdlib> // Required for rand()
 
 void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
+    // Organic Distribution via Rejection Sampling
+    float minimumCellRadius = 1.5f; // The biological territory a cell requires
+    int maxAttempts = 100; // Prevent infinite recursion if the 12x12 grid fills up
+    std::vector<glm::vec2> assignedPositions;
+
     for (int i = 0; i < numNeurons; i++) {
-        // Instantiate on the heap
+        glm::vec2 candidatePos;
+        bool positionValid = false;
+        int currentAttempt = 0;
+
+        // Loop until a valid, empty space is found or we run out of attempts
+        while (!positionValid && currentAttempt < maxAttempts) {
+            // Generate a candidate coordinate inside the 12x12 bounding box
+            candidatePos.x = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
+            candidatePos.y = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
+            
+            positionValid = true; // Assume valid until proven mathematically otherwise
+            
+            // Check distance against all previously locked coordinates
+            for (const glm::vec2& lockedPos : assignedPositions) {
+                if (glm::distance(candidatePos, lockedPos) < minimumCellRadius) {
+                    positionValid = false; // Territorial violation. Reject and reroll.
+                    break;
+                }
+            }
+            currentAttempt++;
+        }
+
+        // Lock in the mathematically validated coordinate
+        assignedPositions.push_back(candidatePos);
+
+        // Instantiate on the heap and map to the valid space
         auto newNeuron = std::make_unique<Neuron>();
         newNeuron->initializeHardware();
-
-        // Generate stochastic spatial coordinates (Spread from -6.0f to +6.0f)
-        float randomX = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
-        float randomY = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
-
-        // Apply the matrix offset
-        newNeuron->SetPosition(randomX, randomY);
-
-        // Anchor to memory
+        newNeuron->SetPosition(candidatePos.x, candidatePos.y);
         neurons.push_back(std::move(newNeuron));
     }
 
-    // Define the critical biological radius. Nodes closer than 4.0 units will connect.
+    // Euclidean Proximity
     float connectionRadius = 4.0f; 
 
     for (size_t i = 0; i < neurons.size(); i++) {
         for (size_t j = 0; j < neurons.size(); j++) {
-            // A biological neuron does not form a chemical synapse with its own soma
-            if (i == j) continue;
+            if (i == j) continue; // Prevent self-synapsing
 
             glm::vec2 posA = neurons[i]->GetPosition();
             glm::vec2 posB = neurons[j]->GetPosition();
-
-            // GLM handles the heavy Pythagorean square root math natively
             float distance = glm::distance(posA, posB);
 
             if (distance <= connectionRadius) {
-                // Procedurally generate a variable neurotransmitter weight (10.0mV to 18.0mV)
-                // This ensures the network topology isn't perfectly uniform
+                // Procedural edge weights (10.0mV to 18.0mV)
                 float randomWeight = 10.0f + (static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 8.0f)); 
-                
                 neurons[i]->AddSynapse(neurons[j].get(), randomWeight);
             }
         }
