@@ -9,10 +9,16 @@ struct Synapse {
     float weight;   // The neurotransmitter payload (measured in mV)
 };
 
+// The Traveling Energy Entity
+struct SignalPacket {
+    float progress; // Spans strictly from 0.0f (Soma) to 1.0f (Axon Terminals)
+};
+
 // The Manager Class which owns the biology and the state
 class Neuron {
 private:
     std::vector<Synapse> outgoingSynapses;
+    std::vector<SignalPacket> activeSignals;
     glm::vec2 worldPosition = glm::vec2(0.0f, 0.0f);
     float rotationAngle = 0.0f; 
     glm::vec2 position; 
@@ -29,8 +35,11 @@ private:
     float resetPotential = -80.0f;     // The hyperpolarization dip after firing
     float timeConstant = 15.0f;        // The resistance/capacitance decay coefficient
 
+    // SPATIAL PROPAGATION
+    float propagationSpeed = 2.0f;
+
     // BIOLOGICAL CHRONOMETERS
-    float absoluteRefractoryPeriod = 50.0f; // The physical lockout duration in milliseconds
+    float absoluteRefractoryPeriod = 150.0f; // The physical lockout duration in milliseconds
     float currentRefractoryTime = 0.0f;     // The live tracking state
 
     // Live state

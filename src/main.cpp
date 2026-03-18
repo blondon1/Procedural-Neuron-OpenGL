@@ -103,6 +103,7 @@ int main() {
         while (!glfwWindowShouldClose(window)) {
 
             // CHRONOMETER & TEMPORAL DILATION
+            // CHRONOMETER & TEMPORAL DILATION
             float currentFrame = glfwGetTime();
             deltaTime = (currentFrame - lastFrame) * 0.3f; // SLOW-MODE
             lastFrame = currentFrame;
@@ -111,6 +112,7 @@ int main() {
             // Zoom (Up/Down Arrows)
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
                 cameraZoom -= 2.0f * (deltaTime / 0.3f); 
+                if (cameraZoom < 0.5f) cameraZoom = 0.5f;
             }
             if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
                 cameraZoom += 2.0f * (deltaTime / 0.3f); 
