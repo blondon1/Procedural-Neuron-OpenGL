@@ -114,11 +114,11 @@ Need to solve the geometric friction on the CPU by mutating the underlying data 
 3/4/2026
 Now that I have a working demo of the neuron morphology, I will encapsulate my classes using Object-Oriented Design (OOD) principles. I am organizing my sections of logic into different files to ensure faster compile times as the project scales and to enforce strict structural organization overall. Blueprint declarations will be isolated into .h header files, while massive geometric functions will be extracted into .cpp implementation files accordingly.
 
-3/8/2026
+# 3/8/2026
 ![e.g.](neuron_anatomy.jpg)
 Now that the OOD refactoring is complete and the translation units are compiling cleanly, today's goal is to implement the complete axon morphology from start to finish. I am organizing the logic into strict phases so I can verify the geometry visually at each step and avoid massive debugging headaches. Phase 1 reserves a spatial exclusion zone on the right side of the soma by tweaking the dendrite arc math, giving the axon hillock a dedicated slot without overlapping. Phase 2 will weld a long, uniform transmission shaft directly to the hillock's coordinates to keep it as a single, optimized OpenGL draw call. For Phase 3, I plan to attach a shallow L-System at the end of the shaft for the axon terminals, using fewer iterations and thicker endpoints for the synapses. I am purposefully deferring the myelin sheaths for now to keep the complexity low and ensure the foundational MVP is mathematically sound before adding extra mesh layers.
 
-3/14/2026
+# 3/14/2026
 **Objective:** Upgrade from static geometry to dynamic computational physics and multi-agent networking.
 
 **The Physics Engine (LIF Model)**
@@ -141,3 +141,17 @@ Now that the OOD refactoring is complete and the translation units are compiling
 
 
 I transitioned the engine from a hardcoded binary synapse to a procedurally generated neural graph, but scaling up immediately exposed a fatal C++ memory hazard. I realized that if I just dumped dozens of neurons into a standard std::vector, dynamic array resizing would shift the physical memory blocks, instantly turning every Synapse target into a dangling pointer and guaranteeing a massive segmentation fault. Applying the Steel-Man rule to my architectural options, rigid stack arrays were a dead end for a dynamic system, so I refactored the core loop into a centralized NeuralNetworkManager using strict heap allocation (std::vector<std::unique_ptr<Neuron>>) to permanently lock down those memory addresses. With the pointers mathematically stabilized, I tackled the spatial topology. A rigid grid is computationally cheap but biologically false, so I scattered the nodes using procedural generation; however, pure randomness caused severe geometric clipping and overlapping somas. To fix this, I implemented a Rejection Sampling algorithm to enforce a strict 1.5-unit biological territory, automatically discarding and rerolling coordinates until the tissue visually verified as an organic mesh. Finally, to wire it all together without writing manual pointers, I built an O(N^2) Euclidean initialization loop that applies the Pythagorean theorem to dynamically fuse weighted synapses between any nodes falling within a 4.0-unit radius. The result is exactly the self-organizing system I was aiming for: a stable, non-clipping neural tissue where universal stochastic noise triggers localized action potentials that autonomously cascade across the algorithmically wired graph.
+
+# 3/18/2026
+
+Objective: Topological Polish, Viewport Unconstraint, and Stress-Testing Scale
+
+After securing the procedural topology, I hit an immediate aesthetic and diagnostic wall. The mathematically perfect graph looked entirely synthetic because every neuron strictly aligned to 0 radians, pointing dead right. I initially considered mathematically bending the procedural L-System axons to physically touch their target dendrites. However, since a single neuron connects to multiple neighbors in opposite directions, calculating dynamic fractal branching for multi-target pathfinding is an O(N3) computational nightmare.
+
+Instead, I opted for an  abstraction. I injected a stochastic rotational matrix (glm::rotate) during instantiation, assigning a random 0 to 2π radian angle to give the cells a chaotic, microscopic organic scatter. To solve the unreadable "snowstorm" of traveling packets, I safely exposed the encapsulated synaptic pointers via a constant reference getter and batched a single GL_LINES dispatch to render a faint, 15% opacity cyan topological web in the background. The structural integrity of the graph was finally visible.
+
+With the network now readable, the static camera became a critical bottleneck; I was completely restricted from exploring the tissue. I engineered a dynamic WASD planar translation system but immediately encountered friction with the movement scaling: panning a static float distance feels impossibly sluggish when macro-zoomed and violently uncontrollable when micro-zoomed. The strict mathematical fix was binding the translation speed directly to the cameraZoom state variable, ensuring 1:1 optical consistency regardless of the focal length.
+
+Finally, I stress-tested the engine's scaling limits. I forced the architecture to reveal its three hard bottlenecks: the spatial geometry trap (packing circles into a 12×12 grid causes infinite rejection-sampling loops), the CPU O(N2) wiring loop, and the OpenGL draw-call ceiling. To shatter the immediate spatial limit, I drastically expanded the procedural canvas to a 200×200 bounding box and pulled the macro-camera back to a 100.0 zoom factor.
+
+The engine successfully brute-forced a massive, sweeping 1,000-node network. Witnessing thousands of discrete action potentials cascading across the glowing synaptic web verified the robustness of the architecture, while simultaneously proving my next mandatory engineering threshold: scaling beyond this to 10,000+ nodes will strictly require abandoning individual glDrawArrays calls and implementing Instanced Rendering to bypass the CPU-GPU data bus bottleneck.

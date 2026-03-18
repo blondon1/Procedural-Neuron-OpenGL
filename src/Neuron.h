@@ -37,6 +37,8 @@ private:
     float membranePotential = -70.0f;  // The live fluctuating voltage 
 
 public:
+    // Topology getter
+    const std::vector<Synapse>& GetSynapses() const { return outgoingSynapses; }
     // Spatial getter
     glm::vec2 GetPosition() const { return worldPosition; }
 

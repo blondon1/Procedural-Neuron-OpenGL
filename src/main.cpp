@@ -93,7 +93,7 @@ int main() {
     {
         // --- 1. THE NEURAL GRAPH CONTROLLER (INITIALIZE ONCE) ---
         NeuralNetworkManager neuralGraph;
-        neuralGraph.InitializeProceduralGraph(20);
+        neuralGraph.InitializeProceduralGraph(1000);
 
         // --- 2. TEMPORAL STATE ---
         float deltaTime = 0.0f;
@@ -111,7 +111,6 @@ int main() {
             // Zoom (Up/Down Arrows)
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
                 cameraZoom -= 2.0f * (deltaTime / 0.3f); 
-                if (cameraZoom < 0.5f) cameraZoom = 0.5f; 
             }
             if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
                 cameraZoom += 2.0f * (deltaTime / 0.3f); 

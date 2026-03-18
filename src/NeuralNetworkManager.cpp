@@ -15,8 +15,8 @@ void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
         // Loop until a valid, empty space is found or we run out of attempts
         while (!positionValid && currentAttempt < maxAttempts) {
             // Generate a candidate coordinate inside the 12x12 bounding box
-            candidatePos.x = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
-            candidatePos.y = ((static_cast<float>(rand()) / RAND_MAX) * 12.0f) - 6.0f;
+            candidatePos.x = ((static_cast<float>(rand()) / RAND_MAX) * 200.0f) - 100.0f;
+            candidatePos.y = ((static_cast<float>(rand()) / RAND_MAX) * 200.0f) - 100.0f;
             
             positionValid = true; // Assume valid until proven mathematically otherwise
             
@@ -79,7 +79,29 @@ void NeuralNetworkManager::Update(float deltaTime) {
 }
 
 void NeuralNetworkManager::Draw(unsigned int shaderProgram) {
-    // Execute rendering dispatch for all nodes
+    // Synaptic Web Rendering
+    // We set the shader color to a very faint, semi-transparent cyan
+    int colorLoc = glGetUniformLocation(shaderProgram, "objectColor");
+    glUniform4f(colorLoc, 0.0f, 0.4f, 0.6f, 0.15f); // 15% Opacity
+
+    glLineWidth(1.0f); // Ensure lines are thin and delicate
+    glBegin(GL_LINES);
+    
+    // Iterate through every neuron and draw a line to each of its targets
+    for (const auto& neuron : neurons) {
+        glm::vec2 startPos = neuron->GetPosition();
+        
+        for (const Synapse& synapse : neuron->GetSynapses()) {
+            glm::vec2 endPos = synapse.target->GetPosition();
+            
+            // Dispatch the starting and ending coordinates to the GPU
+            glVertex2f(startPos.x, startPos.y);
+            glVertex2f(endPos.x, endPos.y);
+        }
+    }
+    glEnd();
+
+    // Render neurons and packets
     for (auto& neuron : neurons) {
         neuron->Draw(shaderProgram);
     }
