@@ -19,6 +19,7 @@ void Neuron::initializeHardware() {
 void Neuron::Draw(unsigned int shaderProgram) {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(worldPosition.x, worldPosition.y, 0.0f));
+    model = glm::rotate(model, rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
     int modelLoc = glGetUniformLocation(shaderProgram, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     // Normalize the voltage to a 0.0 to 1.0 scale

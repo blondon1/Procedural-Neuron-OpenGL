@@ -84,8 +84,9 @@ int main() {
     // CAMERA STATE VARIABLES
     glUseProgram(shaderProgram);
     float aspectRatio = 800.0f / 600.0f;
-    float cameraZoom = 2.0f; 
-    float cameraPanX = 1.15f; 
+    float cameraZoom = 6.0f;  
+    float cameraPanX = 0.0f;  // Centered mathematically
+    float cameraPanY = 0.0f;  // Y-axis translation
     int projLoc = glGetUniformLocation(shaderProgram, "projection");
 
     // Scope for objects
@@ -107,6 +108,7 @@ int main() {
             lastFrame = currentFrame;
 
             // HARDWARE INTERRUPTS (THE CAMERA)
+            // Zoom (Up/Down Arrows)
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
                 cameraZoom -= 2.0f * (deltaTime / 0.3f); 
                 if (cameraZoom < 0.5f) cameraZoom = 0.5f; 
@@ -115,12 +117,29 @@ int main() {
                 cameraZoom += 2.0f * (deltaTime / 0.3f); 
             }
 
+            // Planar Translation (WASD)
+            // Mathematically bind pan speed to the zoom level for consistent optical tracking
+            float panSpeed = 1.0f * cameraZoom; 
+            
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                cameraPanY += panSpeed * (deltaTime / 0.3f); // Move up
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                cameraPanY -= panSpeed * (deltaTime / 0.3f); // Move down
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                cameraPanX -= panSpeed * (deltaTime / 0.3f); // Move left
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                cameraPanX += panSpeed * (deltaTime / 0.3f); // Move right
+            }
+
             // DYNAMIC PROJECTION MATRIX
             glm::mat4 projection = glm::ortho(
                 (-aspectRatio * cameraZoom) + cameraPanX, 
                 (aspectRatio * cameraZoom) + cameraPanX, 
-                -cameraZoom, 
-                cameraZoom, 
+                -cameraZoom + cameraPanY, // Injected Y-Axis bottom boundary
+                cameraZoom + cameraPanY,  // Injected Y-Axis top boundary
                 -1.0f, 1.0f
             );
             glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));

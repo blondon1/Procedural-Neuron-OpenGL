@@ -37,6 +37,11 @@ void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
         auto newNeuron = std::make_unique<Neuron>();
         newNeuron->initializeHardware();
         newNeuron->SetPosition(candidatePos.x, candidatePos.y);
+
+        // Procedurally generate a random rotation (0 to 2*PI radians)
+        float randomRotation = (static_cast<float>(rand()) / RAND_MAX) * (2.0f * 3.14159265f);
+        newNeuron->SetRotation(randomRotation);
+
         neurons.push_back(std::move(newNeuron));
     }
 

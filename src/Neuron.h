@@ -14,6 +14,7 @@ class Neuron {
 private:
     std::vector<Synapse> outgoingSynapses;
     glm::vec2 worldPosition = glm::vec2(0.0f, 0.0f);
+    float rotationAngle = 0.0f; 
     glm::vec2 position; 
     // Composition: The Neuron HAS these structural parts
     Soma soma;
@@ -38,6 +39,8 @@ private:
 public:
     // Spatial getter
     glm::vec2 GetPosition() const { return worldPosition; }
+
+    void SetRotation(float radians) { rotationAngle = radians; }
 
     void AddSynapse(Neuron* targetNeuron, float neurotransmitterWeight);
     
