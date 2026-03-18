@@ -4,7 +4,7 @@ A biologically accurate, procedurally generated 2D simulation of a massive, mult
 
 | Binary Synaptic Transmission | Tissue-Scale Topology |
 | :---: | :---: |
-| <video src="./artifacts/binary_synapse.mp4" width="350" autoplay loop muted playsinline></video> | <img src="./artifacts/macro_network.png" width="350"> | <img src="./artifacts/macro_network.png" width="350"> |
+| <video src="https://github.com/blondon1/Procedural-Neuron-OpenGL/raw/main/artifacts/binary_synapse.mp4" width="350" autoplay loop muted playsinline></video> | <img src="./artifacts/macro_network.png" width="350"> | <img src="./artifacts/macro_network.png" width="350"> |
 | *LIF Physics & Kinematic Signal Propagation* | *1,000-Node Algorithmic Graph & Synaptic Web* |
 
 ## Project Overview
