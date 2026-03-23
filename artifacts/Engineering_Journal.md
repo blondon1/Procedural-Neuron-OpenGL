@@ -155,3 +155,31 @@ With the network now readable, the static camera became a critical bottleneck; I
 Finally, I stress-tested the engine's scaling limits. I forced the architecture to reveal its three hard bottlenecks: the spatial geometry trap (packing circles into a 12×12 grid causes infinite rejection-sampling loops), the CPU O(N2) wiring loop, and the OpenGL draw-call ceiling. To shatter the immediate spatial limit, I drastically expanded the procedural canvas to a 200×200 bounding box and pulled the macro-camera back to a 100.0 zoom factor.
 
 The engine successfully brute-forced a massive, sweeping 1,000-node network. Witnessing thousands of discrete action potentials cascading across the glowing synaptic web verified the robustness of the architecture, while simultaneously proving my next mandatory engineering threshold: scaling beyond this to 10,000+ nodes will strictly require abandoning individual glDrawArrays calls and implementing Instanced Rendering to bypass the CPU-GPU data bus bottleneck.
+
+# 3/23/2026
+
+The engine successfully pushed a 1,000-node topology today. It is mathematically stable and visually striking, but watching the cascades propagate, I had to stop and analize my own underlying premise.
+
+If a critic looked at this right now, their strongest argument would be this: You haven't built a computational engine; you've built a highly optimized biological screensaver. And they would be mathematically right.
+
+My immediate instinct was to chase scale. I was mapping out Phase 6 to rewrite the pipeline for glDrawArraysInstanced to shatter the GPU bottleneck and force 10,000+ nodes onto the screen. But why? What does 10,000 nodes actually solve that 1,000 doesn't, if the network can't process a single byte of persistent data? Chasing draw-calls is an engineering vanity metric. I am optimizing for the wrong vector. A 2D planar constraint, LIF physics, and O(N2) Euclidean wiring.
+
+This shouldn't be a simulation of a brain. This is an in silico digital twin of a Microelectrode Array (MEA) petri dish.
+
+When researchers at places like Cortical Labs plate living cells onto silicon grids to teach them to play Pong (Organoid Intelligence), they are working within the exact same 2D spatial constraints my engine currently enforces. If I lean into this and treat the canvas as a virtual petri dish, the software suddenly shifts from a graphics project into a theoretical biocomputing sandbox. Could I use this to prototype electrode placements? Could I isolate the exact spatial degradation of synaptic pruning before a researcher wastes living in vitro tissue?
+
+But leaning into this exposes the engine's current flaw.
+
+The network is 100% Excitatory (Glutamatergic). It only knows how to add voltage. If I inject sustained noise into this dense Euclidean web, it is mathematically guaranteed to trigger an infinite feedback loop. It's not processing information; it is simulating a seizure.
+
+To make this petri dish functional, it requires biological brakes. The next architectural mandate isn't scaling up; it's stabilizing what is already here.
+
+**Open Questions for Phase 6:**
+
+1. If I inject Inhibitory (GABAergic) neurons into the procedural generation pool at a strict 20% biological ratio, what happens to the emergent topology?
+
+2. Will the negative voltage (-mV) perfectly counterbalance the cascades and create stable, rhythmic oscillations? Or will it over-correct and mathematically silence the entire dish?
+
+3. How do I visually differentiate a Glutamatergic node from a GABAergic node in the shader without breaking the organic aesthetic?
+
+4. If I can achieve a stable, rhythmic oscillation, what is the mathematical threshold to introduce Spike-Timing-Dependent Plasticity (STDP)? Can I actually get this digital tissue to "learn" a pathway?
