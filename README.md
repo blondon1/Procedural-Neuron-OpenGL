@@ -1,6 +1,6 @@
-# Procedural Neural Tissue Simulation (OpenGL)
+# In Silico Neural Dynamics Simulator
 
-A biologically accurate, procedurally generated 2D simulation of a massive, multi-polar neural graph utilizing low-level C++ 20 and the OpenGL graphics pipeline.
+A biologically grounded, GPU-accelerated 2D simulation of a massive, multi-polar neural graph utilizing low-level C++20 and the OpenGL graphics pipeline.
 
 | Binary Synaptic Transmission | Tissue-Scale Topology |
 | :---: | :---: |
@@ -8,58 +8,37 @@ A biologically accurate, procedurally generated 2D simulation of a massive, mult
 | *LIF Physics & Kinematic Signal Propagation* | *1,000-Node Algorithmic Graph & Synaptic Web* |
 
 ## Project Overview
-This project is an ambitious exploration of the intersection between **fractal geometry**, **computational physics**, and **multi-agent networking**. By bridging the gap between rigid L-Systems and organic tissue, the engine utilizes hardware-accelerated shaders and dynamic heap allocation to simulate the complex morphology, electrical physics, and algorithmic self-organization of a living neural network.
+This project provides a high-performance, visually intuitive prototyping environment for computational neuroscience. Existing tools (like NEURON or Brian2) have steep learning curves and lack real-time visual feedback for spatial topologies. This engine bridges that gap. By bypassing high-level wrappers, it utilizes custom C++ memory allocation and OpenGL shaders to simulate the continuous spatial propagation and Leaky Integrate-and-Fire (LIF) physics of a massive, procedurally generated neural tissue graph. 
+
+It is designed to serve as an interactive teaching and prototyping sandbox for observing emergent network-level dynamics.
 
 ## Engineering Journal
-A transparent, chronological log of architectural decisions, research findings, and technical friction is maintained in the `artifacts/` directory. This journal serves as a strict mathematical and structural record of the project's evolution from a blank geometric window to a procedural tissue simulation.
-
+A transparent, chronological log of architectural decisions, research findings, and technical friction is maintained in the `artifacts/` directory. This journal serves as a strict mathematical and structural record of the project's evolution.
 **Read the full log here:** [Engineering_Journal.md](./artifacts/Engineering_Journal.md)
 
+## Key Engineering Milestones
+* **Autonomous LIF Physics Engine:** Engineered a Leaky Integrate-and-Fire model decoupled from the render loop via a fixed-step accumulator, ensuring mathematically deterministic membrane voltage decay, action potential thresholds (-55mV), and strict temporal refractory lockouts regardless of GPU frame rates.
+* **Heap-Allocated Memory Architecture:** Refactored the core execution loop into a `NeuralNetworkManager` utilizing `std::vector<std::unique_ptr<Neuron>>` to guarantee immutable memory addresses, strictly preventing `Synapse` pointer invalidation during massive dynamic array resizing.
+* **Algorithmic Graph Topology:** Replaced rigid grid placements with an $O(N^2)$ Euclidean proximity loop, dynamically fusing weighted synapses between any nodes falling within a 4.0-unit biological radius, overlaying a massive `GL_LINES` synaptic web.
+* **Spatial Validation (Rejection Sampling):** To ensure organic cellular territoriality, the procedural scatter algorithm utilizes Rejection Sampling to enforce a 1.5-unit biological minimum radius between somas, entirely eliminating geometric clipping.
+* **Organic Membrane Webbing (SDF Blending):** Programmed custom Fragment Shaders utilizing Signed Distance Fields (SDF) and the `smoothstep` function to natively calculate continuous mathematical membrane blending between dendrites and the cellular core.
+
 ## Interactive Controls
-The simulation features a mathematically scaled, dynamic orthographic camera for exploring the massive tissue sample:
+The simulation features a mathematically scaled, dynamic orthographic camera:
 * **W, A, S, D:** Planar translation (Pan Up, Left, Down, Right).
 * **UP / DOWN Arrows:** Zoom In / Zoom Out (Translation speed scales dynamically with focal length).
 
-## Key Engineering Milestones
-* **Autonomous LIF Physics Engine:** Engineered a Leaky Integrate-and-Fire model using Euler integration to simulate membrane voltage decay, action potential thresholds (-55mV), and strict temporal refractory lockouts.
-* **Heap-Allocated Memory Architecture:** Refactored the core execution loop into a `NeuralNetworkManager` utilizing `std::vector<std::unique_ptr<Neuron>>` to guarantee immutable memory addresses, strictly preventing `Synapse` pointer invalidation during massive dynamic array resizing.
-* **Continuous Spatial Signal Propagation:** Decoupled network transmission from the soma's state machine, encapsulating action potentials into discrete `SignalPacket` entities that physically travel along $C^1$ continuous parametric splines (axons) before triggering target nodes.
-* **Algorithmic Graph Topology:** Replaced rigid grid placements with an $O(N^2)$ Euclidean proximity loop, dynamically fusing weighted synapses between any nodes falling within a 4.0-unit biological radius, overlaying a massive `GL_LINES` synaptic web.
-
-## Technical Stack
-* **Language**: C++ 20 (Modern Standard)
-* **Graphics API**: OpenGL 4.3 (Core Profile)
-* **Build System**: CMake
-* **Package Manager**: vcpkg
-* **Libraries**: 
-    * **GLFW**: Window, context management, and hardware interrupts
-    * **GLAD**: Modern OpenGL function loading
-    * **GLM**: Linear algebra and spatial coordinate transformation
-
-## Algorithmic Deep Dive
-
-### 1. Organic Membrane Webbing (SDF Blending)
-To solve the "harsh corner" problem where dendrites meet the soma, the Fragment Shader calculates a **Signed Distance Field**. Using the `smoothstep` function, pixels dynamically fade based on proximity to the cellular core, creating a seamless, curved membrane union.
-
-### 2. Stochastic L-System Morphology
-The dendritic tree is generated using a non-deterministic L-System featuring **Symmetry Breaking** (probabilistic branching) and **Exponential Tapering**, simulating the massive flare of a primary trunk narrowing into a capillary via decaying trapezoids.
-
-### 3. Spatial Validation (Rejection Sampling)
-To ensure organic cellular territoriality, the procedural scatter algorithm utilizes Rejection Sampling. When proposing a stochastic $(X, Y)$ coordinate for a new cell, the engine calculates the distance to all existing cells. If it violates the 1.5-unit biological minimum radius, the coordinate is discarded and rerolled, entirely eliminating geometric clipping.
-
-## Future Roadmap
-The project is an active **Work In Progress (WIP)** with the following development phases:
-- [x] **Phase 1**: Anatomical Soma/Dendrite Morphology & Hardware-Accelerated Blending.
-- [x] **Phase 2**: Axon Topology & $C^1$ Parametric Splines.
-- [x] **Phase 3**: LIF (Leaky Integrate-and-Fire) Physics & Temporal Dilation.
-- [x] **Phase 4**: Kinematic Signal Propagation & Topological Networking.
-- [x] **Phase 5**: Procedural Tissue Scatter & Euclidean Proximity Wiring.
-
+## Current Research & Development Roadmap
+This project is an active **Work In Progress (WIP)**, transitioning from a static topology to a dynamic Spiking Neural Network (SNN).
+- [x] **Phase 5**: 1,000-Node Procedural Generation and Euclidean topological networking.
+- [ ] **Phase 6**: Network Stabilization via Inhibitory (GABAergic) neurons to mathematically balance excitation and prevent hyper-synchronous seizure loops.
+- [ ] **Phase 7**: Parameter calibration against the Brunel (2000) sparse network dynamics model to achieve asynchronous irregular (AI) firing states.
+- [ ] **Phase 8**: Implementation of Spike-Timing-Dependent Plasticity (STDP) to simulate Hebbian network learning and structural rewiring.
 
 ## Build Instructions
 
 ### Prerequisites
-* C++ 20 Compatible Compiler (MSVC, GCC, or Clang)
+* C++20 Compatible Compiler (MSVC, GCC, or Clang)
 * [CMake](https://cmake.org/)
 * [vcpkg](https://vcpkg.io/en/)
 
