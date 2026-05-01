@@ -11,6 +11,7 @@ private:
     unsigned int synapseVBO = 0;
 
     void InitializeSynapseLineBuffers();
+    const Neuron* GetNeuronByIndex(int index) const;
 
 public:
     NeuralNetworkManager() = default;
@@ -21,4 +22,10 @@ public:
     // Centralized execution controllers
     void Update(float deltaTime);
     void Draw(unsigned int shaderProgram);
+
+    // Read-only JavaScript bridge accessors
+    int getNeuronCount() const;
+    float getMembranePotential(int index) const;
+    float getPositionX(int index) const;
+    float getPositionY(int index) const;
 };

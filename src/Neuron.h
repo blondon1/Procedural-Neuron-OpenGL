@@ -41,6 +41,7 @@ public:
     const std::vector<Synapse>& GetSynapses() const { return outgoingSynapses; }
     // Spatial getter
     glm::vec2 GetPosition() const { return worldPosition; }
+    float GetMembranePotential() const { return membranePotential; }
 
     void SetRotation(float radians) { rotationAngle = radians; }
 

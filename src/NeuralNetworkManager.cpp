@@ -1,6 +1,9 @@
 #include "NeuralNetworkManager.h"
 #include <cstdlib> // Required for rand()
 #include <glm/gtc/type_ptr.hpp>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
 
 void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
     InitializeSynapseLineBuffers();
@@ -66,6 +69,33 @@ void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
             }
         }
     }
+}
+
+const Neuron* NeuralNetworkManager::GetNeuronByIndex(int index) const {
+    if (index < 0 || index >= static_cast<int>(neurons.size())) {
+        return nullptr;
+    }
+
+    return neurons[static_cast<size_t>(index)].get();
+}
+
+int NeuralNetworkManager::getNeuronCount() const {
+    return static_cast<int>(neurons.size());
+}
+
+float NeuralNetworkManager::getMembranePotential(int index) const {
+    const Neuron* neuron = GetNeuronByIndex(index);
+    return neuron ? neuron->GetMembranePotential() : 0.0f;
+}
+
+float NeuralNetworkManager::getPositionX(int index) const {
+    const Neuron* neuron = GetNeuronByIndex(index);
+    return neuron ? neuron->GetPosition().x : 0.0f;
+}
+
+float NeuralNetworkManager::getPositionY(int index) const {
+    const Neuron* neuron = GetNeuronByIndex(index);
+    return neuron ? neuron->GetPosition().y : 0.0f;
 }
 
 NeuralNetworkManager::~NeuralNetworkManager() {
@@ -164,3 +194,16 @@ void NeuralNetworkManager::Draw(unsigned int shaderProgram) {
         neuron->Draw(shaderProgram);
     }
 }
+
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_BINDINGS(neural_engine_bridge) {
+    emscripten::class_<NeuralNetworkManager>("NeuralNetworkManager")
+        .constructor<>()
+        .function("initializeProceduralGraph", &NeuralNetworkManager::InitializeProceduralGraph)
+        .function("update", &NeuralNetworkManager::Update)
+        .function("getNeuronCount", &NeuralNetworkManager::getNeuronCount)
+        .function("getMembranePotential", &NeuralNetworkManager::getMembranePotential)
+        .function("getPositionX", &NeuralNetworkManager::getPositionX)
+        .function("getPositionY", &NeuralNetworkManager::getPositionY);
+}
+#endif
