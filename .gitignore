@@ -15,6 +15,13 @@ _deps/
 *.pdb
 *.ilk
 
+# Precompiled WebAssembly deployment assets
+!web-ui/public/
+!web-ui/public/*.wasm
+!web-ui/public/*.js
+!web-ui/public/createNeuralEngine.wasm
+!web-ui/public/createNeuralEngine.js
+
 #CMake Cache and Logs
 CMakeCache.txt
 CMakeFiles/

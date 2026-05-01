@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Precompiled WebAssembly deployment assets
+!public/
+!public/*.wasm
+!public/*.js
+!public/createNeuralEngine.wasm
+!public/createNeuralEngine.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -6,7 +6,8 @@ const WasmContext = createContext({
   error: null,
 });
 
-const DEFAULT_ENGINE_LOADER = "/wasm/Neurons2D.js";
+const DEFAULT_ENGINE_LOADER = "/createNeuralEngine.js";
+const DEFAULT_WASM_BINARY = "/createNeuralEngine.wasm";
 
 function createBridgeManager(Module) {
   if (typeof Module?.NeuralNetworkManager !== "function") {
@@ -116,7 +117,7 @@ export function WasmProvider({ children }) {
           canvas,
           locateFile: (path) => {
             if (path.endsWith(".wasm")) {
-              return `/wasm/${path}`;
+              return DEFAULT_WASM_BINARY;
             }
             return path;
           },

@@ -1,67 +1,64 @@
 # In Silico Neural Dynamics Simulator
 
-A biologically grounded, GPU-accelerated 2D simulation of a massive, multi-polar neural graph utilizing low-level C++20 and the OpenGL graphics pipeline.
+In Silico Neural Dynamics Simulator is a biologically grounded C++20 neural simulation engine ported to the web through WebAssembly for real-time interactive prototyping. The project models a procedurally generated 1,000-node neural graph using Leaky Integrate-and-Fire (LIF) dynamics, fixed-timestep simulation, GPU-rendered cellular morphology, and a React interface designed for fast inspection during a live demo.
 
-| Binary Synaptic Transmission | Tissue-Scale Topology |
-| :---: | :---: |
-| <video src="https://github.com/user-attachments/assets/d2ba8187-76ed-4657-a758-0d191cb91fd9" width="100%" autoplay loop muted playsinline></video> | <img src="./artifacts/macro_network.png" width="100%"> |
-| *LIF Physics & Kinematic Signal Propagation* | *1,000-Node Algorithmic Graph & Synaptic Web* |
+The goal is to make computational neuroscience feel immediate: judges can observe membrane voltage, spatial topology, action-potential behavior, and guided narration directly in the browser without installing a native graphics stack.
 
-## Project Overview
-This project provides a high-performance, visually intuitive prototyping environment for computational neuroscience. Existing tools (like NEURON or Brian2) have steep learning curves and lack real-time visual feedback for spatial topologies. This engine bridges that gap. By bypassing high-level wrappers, it utilizes custom C++ memory allocation and OpenGL shaders to simulate the continuous spatial propagation and Leaky Integrate-and-Fire (LIF) physics of a massive, procedurally generated neural tissue graph. 
+## Building with AI
 
-It is designed to serve as an interactive teaching and prototyping sandbox for observing emergent network-level dynamics.
+The core LIF physics and custom memory allocation were strictly human-engineered. The membrane voltage model, refractory timing behavior, synaptic signal flow, and heap-anchored `std::unique_ptr<Neuron>` architecture were designed manually to keep the biological simulation deterministic and memory-safe.
 
-## Engineering Journal
-A transparent, chronological log of architectural decisions, research findings, and technical friction is maintained in the `artifacts/` directory. This journal serves as a strict mathematical and structural record of the project's evolution.
-**Read the full log here:** [Engineering_Journal.md](./artifacts/Engineering_Journal.md)
+AI was used as an engineering accelerator around the human-authored core:
 
-## Key Engineering Milestones
-* **Autonomous LIF Physics Engine:** Engineered a Leaky Integrate-and-Fire model decoupled from the render loop via a fixed-step accumulator, ensuring mathematically deterministic membrane voltage decay, action potential thresholds (-55mV), and strict temporal refractory lockouts regardless of GPU frame rates.
-* **Heap-Allocated Memory Architecture:** Refactored the core execution loop into a `NeuralNetworkManager` utilizing `std::vector<std::unique_ptr<Neuron>>` to guarantee immutable memory addresses, strictly preventing `Synapse` pointer invalidation during massive dynamic array resizing.
-* **Algorithmic Graph Topology:** Replaced rigid grid placements with an $O(N^2)$ Euclidean proximity loop, dynamically fusing weighted synapses between any nodes falling within a 4.0-unit biological radius, overlaying a massive `GL_LINES` synaptic web.
-* **Spatial Validation (Rejection Sampling):** To ensure organic cellular territoriality, the procedural scatter algorithm utilizes Rejection Sampling to enforce a 1.5-unit biological minimum radius between somas, entirely eliminating geometric clipping.
-* **Organic Membrane Webbing (SDF Blending):** Programmed custom Fragment Shaders utilizing Signed Distance Fields (SDF) and the `smoothstep` function to natively calculate continuous mathematical membrane blending between dendrites and the cellular core.
+- Calculated the complex Signed Distance Field (SDF) math used by the shaders to blend dendritic membranes smoothly into cellular bodies.
+- Architected the Emscripten/WebAssembly compilation pipeline and the JavaScript data bridge used by the React frontend.
+- Generated the Vite/React UI, high-frequency `useRef` telemetry panel, and Web Speech API narration engine while navigating strict Apple HIG dark-mode design constraints.
 
-## Interactive Controls
-The simulation features a mathematically scaled, dynamic orthographic camera:
-* **W, A, S, D:** Planar translation (Pan Up, Left, Down, Right).
-* **UP / DOWN Arrows:** Zoom In / Zoom Out (Translation speed scales dynamically with focal length).
+## Tech Stack
 
-## Current Research & Development Roadmap
-This project is an active **Work In Progress (WIP)**, transitioning from a static topology to a dynamic Spiking Neural Network (SNN).
-- [x] **Phase 5**: 1,000-Node Procedural Generation and Euclidean topological networking.
-- [ ] **Phase 6**: Network Stabilization via Inhibitory (GABAergic) neurons to mathematically balance excitation and prevent hyper-synchronous seizure loops.
-- [ ] **Phase 7**: Parameter calibration against the Brunel (2000) sparse network dynamics model to achieve asynchronous irregular (AI) firing states.
-- [ ] **Phase 8**: Implementation of Spike-Timing-Dependent Plasticity (STDP) to simulate Hebbian network learning and structural rewiring.
+- C++20 simulation engine
+- WebGL2 and Emscripten/WebAssembly
+- React with Vite
+- Tailwind CSS
+- Web Speech API
 
-## Build Instructions
+## What to Look For
 
-### Prerequisites
-* C++20 Compatible Compiler (MSVC, GCC, or Clang)
-* [CMake](https://cmake.org/)
-* [vcpkg](https://vcpkg.io/en/)
+- A procedurally generated 1,000-node neural graph rendered through WebGL-compatible buffers.
+- Fixed-timestep LIF physics designed to remain stable independent of display refresh rate.
+- A high-frequency selected-neuron panel that samples membrane voltage at animation-frame speed without triggering React state churn.
+- A cinematic guided tour that narrates the simulation through the browser's speech synthesis system.
+- Apple HIG-inspired dark UI: pure black canvas, thin translucent borders, subtle glass panels, and system typography.
 
-### Steps
-1. **Clone the repository**:
-   ```bash
-    git clone [https://github.com/blondon1/Procedural-Neuron-OpenGL](https://github.com/blondon1/Procedural-Neuron-OpenGL)
-    cd Procedural-Neuron-OpenGL
-2. **Install Dependencies (vcpkg)**:
-   Ensure `vcpkg` is installed and integrated. This project requires the following libraries:
-   ```bash
-    vcpkg install glfw3 glad glm
-3. **Configure and Build**:
-   Create a build directory and run CMake, pointing to your vcpkg toolchain file.
-   ```bash
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=[path/to/vcpkg]/scripts/buildsystems/vcpkg.cmake
-    cmake --build .
-4. **Run the Simulation:**:
-   Execute the compiled binary from the build directory.
-   ```bash
-    .\build\Debug\Neurons2D.exe
+## How to Run
+
+Live demo: [Insert Vercel Link Here]
+
+1. Open the Vercel link in a modern desktop browser.
+2. Wait for the WebAssembly runtime gate to finish initializing the neural engine.
+3. Use the floating selected-neuron panel to observe live membrane voltage.
+4. Click **Start Guided Tour** to launch the narrated walkthrough.
+5. Interact with the canvas directly; the UI overlay is configured so non-panel clicks pass through to the simulation controls.
+
+## Local Development
+
+From the React frontend directory:
+
+```bash
+cd web-ui
+npm install
+npm run dev
+```
+
+For production deployment, the configured build script runs the Emscripten build before the Vite frontend build:
+
+```bash
+cd web-ui
+npm run build
+```
+
+The full production build expects the Emscripten toolchain (`emcmake` and `emmake`) to be available on `PATH`.
 
 ## License
-This project is licensed under the **MIT License** - see the [LICENSE](https://opensource.org/license/MIT) file for details.
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
