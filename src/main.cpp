@@ -1,6 +1,8 @@
 #include "CellularMorphology.h"
 #include "NeuralNetworkManager.h"
+#ifndef __EMSCRIPTEN__
 #include <glad/glad.h>
+#endif
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -58,7 +60,9 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
+#ifndef __EMSCRIPTEN__
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
+#endif
 
     // Add transparency processing to the OpenGl state machine
     glEnable(GL_BLEND);
@@ -96,24 +100,26 @@ int main() {
         neuralGraph.InitializeProceduralGraph(1000);
 
         // --- 2. TEMPORAL STATE ---
-        float deltaTime = 0.0f;
-        float lastFrame = 0.0f;  
+        constexpr float fixedDt = 0.01666f;
+        float accumulator = 0.0f;
+        float lastFrame = static_cast<float>(glfwGetTime());
 
         // --- 3. EXECUTION (THE AUTONOMOUS RENDER LOOP) ---
         while (!glfwWindowShouldClose(window)) {
 
             // CHRONOMETER & TEMPORAL DILATION
-            float currentFrame = glfwGetTime();
-            deltaTime = (currentFrame - lastFrame) * 0.3f; // SLOW-MODE
+            float currentFrame = static_cast<float>(glfwGetTime());
+            float frameTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
+            accumulator += frameTime;
 
             // HARDWARE INTERRUPTS (THE CAMERA)
             // Zoom (Up/Down Arrows)
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-                cameraZoom -= 2.0f * (deltaTime / 0.3f); 
+                cameraZoom -= 2.0f * frameTime; 
             }
             if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                cameraZoom += 2.0f * (deltaTime / 0.3f); 
+                cameraZoom += 2.0f * frameTime; 
             }
 
             // Planar Translation (WASD)
@@ -121,16 +127,16 @@ int main() {
             float panSpeed = 1.0f * cameraZoom; 
             
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                cameraPanY += panSpeed * (deltaTime / 0.3f); // Move up
+                cameraPanY += panSpeed * frameTime; // Move up
             }
             if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                cameraPanY -= panSpeed * (deltaTime / 0.3f); // Move down
+                cameraPanY -= panSpeed * frameTime; // Move down
             }
             if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-                cameraPanX -= panSpeed * (deltaTime / 0.3f); // Move left
+                cameraPanX -= panSpeed * frameTime; // Move left
             }
             if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-                cameraPanX += panSpeed * (deltaTime / 0.3f); // Move right
+                cameraPanX += panSpeed * frameTime; // Move right
             }
 
             // DYNAMIC PROJECTION MATRIX
@@ -145,7 +151,10 @@ int main() {
 
             // THE NEURAL GRAPH CONTROLLER: PHYSICS MECHANICS
             // (Stochastic noise is now handled cleanly inside this Update method)
-            neuralGraph.Update(deltaTime);
+            while (accumulator >= fixedDt) {
+                neuralGraph.Update(fixedDt);
+                accumulator -= fixedDt;
+            }
 
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);

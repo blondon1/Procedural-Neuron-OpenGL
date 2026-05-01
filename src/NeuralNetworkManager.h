@@ -7,10 +7,14 @@ class NeuralNetworkManager {
 private:
     // Heap-allocated memory anchor to strictly prevent Synapse pointer invalidation
     std::vector<std::unique_ptr<Neuron>> neurons;
+    unsigned int synapseVAO = 0;
+    unsigned int synapseVBO = 0;
+
+    void InitializeSynapseLineBuffers();
 
 public:
     NeuralNetworkManager() = default;
-    ~NeuralNetworkManager() = default;
+    ~NeuralNetworkManager();
 
     void InitializeProceduralGraph(int numNeurons);
 

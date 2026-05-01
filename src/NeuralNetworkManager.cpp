@@ -1,7 +1,10 @@
 #include "NeuralNetworkManager.h"
 #include <cstdlib> // Required for rand()
+#include <glm/gtc/type_ptr.hpp>
 
 void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
+    InitializeSynapseLineBuffers();
+
     // Organic Distribution via Rejection Sampling
     float minimumCellRadius = 1.5f; // The biological territory a cell requires
     int maxAttempts = 100; // Prevent infinite recursion if the 12x12 grid fills up
@@ -65,6 +68,33 @@ void NeuralNetworkManager::InitializeProceduralGraph(int numNeurons) {
     }
 }
 
+NeuralNetworkManager::~NeuralNetworkManager() {
+    if (synapseVBO != 0) {
+        glDeleteBuffers(1, &synapseVBO);
+    }
+    if (synapseVAO != 0) {
+        glDeleteVertexArrays(1, &synapseVAO);
+    }
+}
+
+void NeuralNetworkManager::InitializeSynapseLineBuffers() {
+    if (synapseVAO != 0) {
+        return;
+    }
+
+    glGenVertexArrays(1, &synapseVAO);
+    glGenBuffers(1, &synapseVBO);
+
+    glBindVertexArray(synapseVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, synapseVBO);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
 void NeuralNetworkManager::Update(float deltaTime) {
     // Universal Stochastic Background Noise
     for (auto& neuron : neurons) {
@@ -83,23 +113,51 @@ void NeuralNetworkManager::Draw(unsigned int shaderProgram) {
     // We set the shader color to a very faint, semi-transparent cyan
     int colorLoc = glGetUniformLocation(shaderProgram, "objectColor");
     glUniform4f(colorLoc, 0.0f, 0.4f, 0.6f, 0.15f); // 15% Opacity
+    
+    int modelLoc = glGetUniformLocation(shaderProgram, "model");
+    glm::mat4 identityModel = glm::mat4(1.0f);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(identityModel));
+
+    int centerLoc = glGetUniformLocation(shaderProgram, "somaCenter");
+    glUniform2f(centerLoc, 0.0f, 0.0f);
+
+    int radiusLoc = glGetUniformLocation(shaderProgram, "somaRadius");
+    glUniform1f(radiusLoc, 0.0f);
 
     glLineWidth(1.0f); // Ensure lines are thin and delicate
-    glBegin(GL_LINES);
+    std::vector<glm::vec2> synapseVertices;
     
-    // Iterate through every neuron and draw a line to each of its targets
+    size_t synapseVertexCount = 0;
+    for (const auto& neuron : neurons) {
+        synapseVertexCount += neuron->GetSynapses().size() * 2;
+    }
+    synapseVertices.reserve(synapseVertexCount);
+
+    // Iterate through every neuron and batch a line to each of its targets
     for (const auto& neuron : neurons) {
         glm::vec2 startPos = neuron->GetPosition();
         
         for (const Synapse& synapse : neuron->GetSynapses()) {
             glm::vec2 endPos = synapse.target->GetPosition();
             
-            // Dispatch the starting and ending coordinates to the GPU
-            glVertex2f(startPos.x, startPos.y);
-            glVertex2f(endPos.x, endPos.y);
+            synapseVertices.push_back(startPos);
+            synapseVertices.push_back(endPos);
         }
     }
-    glEnd();
+
+    if (!synapseVertices.empty()) {
+        glBindVertexArray(synapseVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, synapseVBO);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(synapseVertices.size() * sizeof(glm::vec2)),
+            synapseVertices.data(),
+            GL_DYNAMIC_DRAW
+        );
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(synapseVertices.size()));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
     // Render neurons and packets
     for (auto& neuron : neurons) {
