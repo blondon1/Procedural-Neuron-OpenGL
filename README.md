@@ -1,64 +1,52 @@
 # In Silico Neural Dynamics Simulator
 
-In Silico Neural Dynamics Simulator is a biologically grounded C++20 neural simulation engine ported to the web through WebAssembly for real-time interactive prototyping. The project models a procedurally generated 1,000-node neural graph using Leaky Integrate-and-Fire (LIF) dynamics, fixed-timestep simulation, GPU-rendered cellular morphology, and a React interface designed for fast inspection during a live demo.
+A C++20 Leaky Integrate-and-Fire neural simulator compiled to WebAssembly, running natively in the browser with a React + Tailwind UI.
 
-The goal is to make computational neuroscience feel immediate: judges can observe membrane voltage, spatial topology, action-potential behavior, and guided narration directly in the browser without installing a native graphics stack.
+## Live Demo
 
-## Building with AI
-
-The core LIF physics and custom memory allocation were strictly human-engineered. The membrane voltage model, refractory timing behavior, synaptic signal flow, and heap-anchored `std::unique_ptr<Neuron>` architecture were designed manually to keep the biological simulation deterministic and memory-safe.
-
-AI was used as an engineering accelerator around the human-authored core:
-
-- Calculated the complex Signed Distance Field (SDF) math used by the shaders to blend dendritic membranes smoothly into cellular bodies.
-- Architected the Emscripten/WebAssembly compilation pipeline and the JavaScript data bridge used by the React frontend.
-- Generated the Vite/React UI, high-frequency `useRef` telemetry panel, and Web Speech API narration engine while navigating strict Apple HIG dark-mode design constraints.
+[INSERT VERCEL URL]
 
 ## Tech Stack
 
-- C++20 simulation engine
-- WebGL2 and Emscripten/WebAssembly
-- React with Vite
-- Tailwind CSS
+- C++20
+- Emscripten/WASM
+- WebGL2
+- React
+- Vite
+- Tailwind
 - Web Speech API
 
-## What to Look For
+## AI Collaboration
 
-- A procedurally generated 1,000-node neural graph rendered through WebGL-compatible buffers.
-- Fixed-timestep LIF physics designed to remain stable independent of display refresh rate.
-- A high-frequency selected-neuron panel that samples membrane voltage at animation-frame speed without triggering React state churn.
-- A cinematic guided tour that narrates the simulation through the browser's speech synthesis system.
-- Apple HIG-inspired dark UI: pure black canvas, thin translucent borders, subtle glass panels, and system typography.
+This project was built with a split between hand-engineered simulation work and AI-assisted integration work.
 
-## How to Run
+Human-engineered:
 
-Live demo: [Insert Vercel Link Here]
+- The Leaky Integrate-and-Fire physics model, including membrane potential updates, refractory timing, stimulus injection, and synaptic propagation behavior.
+- The memory architecture using `std::vector<std::unique_ptr<Neuron>>` to keep neuron addresses stable while synapses store target pointers.
+- The procedural topology system, including spatial placement and rejection sampling to reduce cell overlap.
+- The Signed Distance Field shader math used for membrane blending and cellular rendering.
 
-1. Open the Vercel link in a modern desktop browser.
-2. Wait for the WebAssembly runtime gate to finish initializing the neural engine.
-3. Use the floating selected-neuron panel to observe live membrane voltage.
-4. Click **Start Guided Tour** to launch the narrated walkthrough.
-5. Interact with the canvas directly; the UI overlay is configured so non-panel clicks pass through to the simulation controls.
+AI-assisted:
 
-## Local Development
+- Emscripten and CMake build configuration for compiling the native C++ engine to WebAssembly.
+- The `embind` data bridge exposing primitive, index-based getters from C++ to JavaScript.
+- React/Vite UI scaffolding, including the WASM loading provider and floating telemetry panels.
+- The Web Speech API narration controller used for the guided tour.
 
-From the React frontend directory:
+The core simulation behavior was written and validated by hand. AI was prompted for implementation assistance around portability, frontend architecture, build configuration, and browser integration, then the generated code was reviewed and adapted in the repository.
+
+## How to Run Locally
 
 ```bash
-cd web-ui
+git clone <repo-url>
+cd Neurons-main/web-ui
 npm install
 npm run dev
 ```
 
-For production deployment, the configured build script runs the Emscripten build before the Vite frontend build:
+Open the local Vite URL printed by the terminal.
 
-```bash
-cd web-ui
-npm run build
-```
+## WebAssembly Binary
 
-The full production build expects the Emscripten toolchain (`emcmake` and `emmake`) to be available on `PATH`.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+The `.wasm` binary is committed pre-compiled for deployment. Rebuilding the WebAssembly artifacts locally requires the Emscripten SDK (`emcmake`, `emmake`, and `emcc`) installed on your machine.
