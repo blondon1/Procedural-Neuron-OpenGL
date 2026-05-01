@@ -8,6 +8,42 @@ const WasmContext = createContext({
 
 const DEFAULT_ENGINE_LOADER = "/wasm/Neurons2D.js";
 
+function createBridgeManager(Module) {
+  if (typeof Module?.NeuralNetworkManager !== "function") {
+    return null;
+  }
+
+  try {
+    const manager = new Module.NeuralNetworkManager();
+    manager.initializeProceduralGraph(1000);
+    return manager;
+  } catch (bridgeError) {
+    console.warn("Unable to create NeuralNetworkManager bridge.", bridgeError);
+    return null;
+  }
+}
+
+function attachPrimitiveBridge(Module, manager) {
+  if (!manager) {
+    return;
+  }
+
+  if (typeof Module.getMembranePotential !== "function") {
+    Module.getMembranePotential = (index) => manager.getMembranePotential(index);
+  }
+  if (typeof Module.getPositionX !== "function") {
+    Module.getPositionX = (index) => manager.getPositionX(index);
+  }
+  if (typeof Module.getPositionY !== "function") {
+    Module.getPositionY = (index) => manager.getPositionY(index);
+  }
+  if (typeof Module.getNeuronCount !== "function") {
+    Module.getNeuronCount = () => manager.getNeuronCount();
+  }
+
+  Module.neuralBridge = manager;
+}
+
 function loadCreateNeuralEngine(loaderUrl) {
   if (typeof window.createNeuralEngine === "function") {
     return Promise.resolve(window.createNeuralEngine);
@@ -62,6 +98,7 @@ export function WasmProvider({ children }) {
 
   useEffect(() => {
     let isMounted = true;
+    let bridgeManager = null;
 
     async function initializeRuntime() {
       try {
@@ -91,10 +128,15 @@ export function WasmProvider({ children }) {
         const initializedModule = await createNeuralEngine(moduleConfig);
         await runtimeInitialized;
 
-        if (isMounted) {
-          setModule(initializedModule);
-          setIsReady(true);
+        if (!isMounted) {
+          return;
         }
+
+        bridgeManager = createBridgeManager(initializedModule);
+        attachPrimitiveBridge(initializedModule, bridgeManager);
+
+        setModule(initializedModule);
+        setIsReady(true);
       } catch (caughtError) {
         if (isMounted) {
           setError(caughtError);
@@ -106,6 +148,9 @@ export function WasmProvider({ children }) {
 
     return () => {
       isMounted = false;
+      if (bridgeManager && typeof bridgeManager.delete === "function") {
+        bridgeManager.delete();
+      }
     };
   }, []);
 

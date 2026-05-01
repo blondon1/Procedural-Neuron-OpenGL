@@ -1,5 +1,6 @@
 #Build Directory 
 build/
+build-wasm/
 out/
 cmake-build-*/
 
